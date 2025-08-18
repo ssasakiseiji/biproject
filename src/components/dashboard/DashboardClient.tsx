@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import type { Dashboard, DashboardPage, Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -277,8 +277,10 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
                 <Wand2 className="h-5 w-5 text-primary" />
                 AI-Powered Summary for {page.name}
             </AlertDialogTitle>
-            <AlertDialogDescription className="pt-4 text-foreground">
-              {summary}
+            <AlertDialogDescription asChild>
+              <div className="pt-4 text-foreground">
+                {summary}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, FilterX, BarChart, FileDown } from 'lucide-react';
+import { MoreVertical, Filter, FilterX, BarChart, FileDown } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -64,6 +64,18 @@ export function VisualCard({
                       isHovered ? "opacity-100" : "opacity-0 focus-within:opacity-100"
                   )}
               >
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" onClick={() => onToggleExclude(visualId)}>
+                              {isExcluded ? <FilterX className="h-4 w-4 text-accent" /> : <Filter className="h-4 w-4" />}
+                              <span className="sr-only">{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</span>
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</p>
+                      </TooltipContent>
+                  </Tooltip>
+
                   <DropdownMenu>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -79,10 +91,6 @@ export function VisualCard({
                           </TooltipContent>
                       </Tooltip>
                       <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => onToggleExclude(visualId)}>
-                              <FilterX className="mr-2 h-4 w-4"/>
-                              <span>{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</span>
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={handleExport}>
                               {exportType === 'image' ? <BarChart className="mr-2 h-4 w-4"/> : <FileDown className="mr-2 h-4 w-4"/>}
                               <span>Export as {exportType === 'image' ? 'PNG' : 'CSV'}</span>
@@ -94,9 +102,16 @@ export function VisualCard({
           </CardHeader>
           <CardContent>
               {isExcluded && (
-                   <div className="absolute top-2 left-2 z-10 bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-                      E
-                  </div>
+                   <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="absolute top-2 left-2 z-10 bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded cursor-default">
+                                E
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>This visual is excluded from cross-filtering.</p>
+                        </TooltipContent>
+                   </Tooltip>
               )}
               {children}
           </CardContent>

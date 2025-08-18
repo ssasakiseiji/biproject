@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X } from 'lucide-react';
 
+const ALL_ITEMS_VALUE = '__ALL__';
+
 type FilterBarProps = {
   categories: string[];
   regions: string[];
@@ -18,34 +20,43 @@ type FilterBarProps = {
 };
 
 export function FilterBar({ categories, regions, activeFilters, onFilterChange, onResetFilters }: FilterBarProps) {
+  
+  const handleCategoryChange = (value: string) => {
+    onFilterChange('categoria', value === ALL_ITEMS_VALUE ? null : value);
+  };
+
+  const handleRegionChange = (value: string) => {
+    onFilterChange('region', value === ALL_ITEMS_VALUE ? null : value);
+  };
+
   return (
     <Card className="p-4 shadow">
         <div className="flex flex-col md:flex-row items-center gap-4">
             <h3 className="text-md font-semibold whitespace-nowrap">Filtros Globales:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                 <Select
-                    value={activeFilters.categoria || ''}
-                    onValueChange={(value) => onFilterChange('categoria', value || null)}
+                    value={activeFilters.categoria || ALL_ITEMS_VALUE}
+                    onValueChange={handleCategoryChange}
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Filtrar por Categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">Todas las Categorías</SelectItem>
+                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Categorías</SelectItem>
                         {categories.map(cat => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
                 <Select
-                    value={activeFilters.region || ''}
-                    onValueChange={(value) => onFilterChange('region', value || null)}
+                    value={activeFilters.region || ALL_ITEMS_VALUE}
+                    onValueChange={handleRegionChange}
                 >
                     <SelectTrigger>
                         <SelectValue placeholder="Filtrar por Región" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="">Todas las Regiones</SelectItem>
+                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Regiones</SelectItem>
                         {regions.map(reg => (
                             <SelectItem key={reg} value={reg}>{reg}</SelectItem>
                         ))}

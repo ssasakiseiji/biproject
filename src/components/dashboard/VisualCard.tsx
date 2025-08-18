@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MoreVertical, FilterX, BarChart, FileDown, Filter as FilterIcon } from 'lucide-react';
@@ -10,15 +10,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
-  DropdownMenuCheckboxItem
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { Check } from 'lucide-react';
 import { exportComponentAsPng, exportToCsv } from '@/utils/exportUtils';
 import type { Transaction, BarChartData } from '@/lib/types';
@@ -27,6 +22,7 @@ import { cn } from '@/lib/utils';
 type FilterOption = {
     value: string;
     label: string;
+    group?: string;
 };
 
 type VisualCardProps = {
@@ -38,7 +34,7 @@ type VisualCardProps = {
   exportType: 'csv' | 'image';
   exportData: Transaction[] | BarChartData[];
   filterOptions: FilterOption[];
-  onFilterChange: (value: string) => void;
+  onFilterChange: (value: string, group?: string) => void;
   activeFilter?: string | null;
 };
 
@@ -68,12 +64,27 @@ export function VisualCard({
     }
   };
 
-  const handleFilterSelect = (value: string) => {
-    onFilterChange(value);
+  const handleFilterSelect = (value: string, group?: string) => {
+    onFilterChange(value, group);
     setFilterPopoverOpen(false);
   }
 
   const isFilterable = filterOptions && filterOptions.length > 0;
+  
+  const groupedFilterOptions = useMemo(() => {
+    if (!filterOptions.some(opt => opt.group)) {
+      return null;
+    }
+    return filterOptions.reduce((acc, option) => {
+      const group = option.group || 'Default';
+      if (!acc[group]) {
+        acc[group] = [];
+      }
+      acc[group].push(option);
+      return acc;
+    }, {} as Record<string, FilterOption[]>);
+  }, [filterOptions]);
+
 
   return (
     <TooltipProvider>
@@ -111,23 +122,48 @@ export function VisualCard({
                             <CommandInput placeholder="Search filter..." />
                             <CommandList>
                               <CommandEmpty>No options found.</CommandEmpty>
-                              <CommandGroup>
-                                {filterOptions.map((option) => (
-                                  <CommandItem
-                                    key={option.value}
-                                    value={option.value}
-                                    onSelect={() => handleFilterSelect(option.value)}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        activeFilter === option.value ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {option.label}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
+                              {groupedFilterOptions ? (
+                                Object.entries(groupedFilterOptions).map(([groupName, options], index) => (
+                                  <React.Fragment key={groupName}>
+                                    <CommandGroup heading={groupName}>
+                                      {options.map((option) => (
+                                        <CommandItem
+                                          key={option.value}
+                                          value={option.value}
+                                          onSelect={() => handleFilterSelect(option.value, option.group)}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              activeFilter === option.value ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {option.label}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                    {index < Object.keys(groupedFilterOptions).length - 1 && <CommandSeparator />}
+                                  </React.Fragment>
+                                ))
+                              ) : (
+                                <CommandGroup>
+                                  {filterOptions.map((option) => (
+                                    <CommandItem
+                                      key={option.value}
+                                      value={option.value}
+                                      onSelect={() => handleFilterSelect(option.value)}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          activeFilter === option.value ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {option.label}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              )}
                             </CommandList>
                          </Command>
                       </PopoverContent>

@@ -119,6 +119,23 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
   
   const uniqueCategories = useMemo(() => [...new Set(originalData.map(item => item.categoria))], [originalData]);
   const uniqueRegions = useMemo(() => [...new Set(originalData.map(item => item.region))], [originalData]);
+  const tableFilterOptions = useMemo(() => [
+    ...uniqueCategories.map(c => ({ value: c, label: c, group: 'Categoría' })),
+    ...uniqueRegions.map(r => ({ value: r, label: r, group: 'Región' })),
+  ], [uniqueCategories, uniqueRegions]);
+
+  const handleTableFilterChange = (value: string, group?: string) => {
+    if (group === 'Categoría') {
+        handleFilterChange('categoria', value);
+    } else if (group === 'Región') {
+        handleFilterChange('region', value);
+    }
+  };
+  const getActiveTableFilter = () => {
+    if(activeFilters.categoria) return activeFilters.categoria;
+    if(activeFilters.region) return activeFilters.region;
+    return null;
+  }
 
   return (
     <div className="space-y-8">
@@ -245,8 +262,9 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
             onToggleExclude={handleToggleExclude}
             exportType="csv"
             exportData={filteredData}
-            filterOptions={[]}
-            onFilterChange={() => {}}
+            filterOptions={tableFilterOptions}
+            onFilterChange={handleTableFilterChange}
+            activeFilter={getActiveTableFilter()}
         >
             <DataTable data={filteredData} tableId="data-table-element" />
         </VisualCard>

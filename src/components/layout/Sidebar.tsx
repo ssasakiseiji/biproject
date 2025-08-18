@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { getAccessibleDashboards, getDashboardPages } from '@/services/dataService';
-import type { Dashboard, DashboardPage } from '@/lib/types';
+import { getAccessibleDashboards } from '@/services/dataService';
+import type { Dashboard } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { 
   BarChart3, 
@@ -15,18 +15,13 @@ import {
   ShieldCheck, 
   Menu,
   Wand2,
-  Loader2,
-  ChevronDown
+  Loader2
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
 import { SearchableDropdown } from '../common/SearchableDropdown';
-import { useToast } from '@/hooks/use-toast';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export function Sidebar() {
   const { user, logout } = useAuth();
-  const { toast } = useToast();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();

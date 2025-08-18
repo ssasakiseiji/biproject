@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Dashboard, DashboardPage, Transaction, KPIs } from '@/lib/types';
+import type { Dashboard, DashboardPage, Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2 } from 'lucide-react';
+import { Wand2, Loader2, Filter, X } from 'lucide-react';
 import { generateDashboardSummaryAction } from './actions';
 import {
   AlertDialog,
@@ -18,11 +18,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { calculateKPIs, aggregateData } from '@/utils/dataProcessor';
-import { FilterBar } from './FilterBar';
 import { KPICard } from './KPICard';
 import { InteractiveBarChart } from './InteractiveBarChart';
 import { InteractivePieChart } from './InteractivePieChart';
 import { DataTable } from './DataTable';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type DashboardClientProps = {
   initialData: Transaction[];
@@ -35,6 +38,9 @@ type ActiveFilters = {
     region: string | null;
 };
 
+const ALL_ITEMS_VALUE = '__ALL__';
+
+
 export default function DashboardClient({ initialData, dashboard, page }: DashboardClientProps) {
   const [originalData] = useState<Transaction[]>(initialData);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
@@ -45,6 +51,11 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
   const [activeFilters, setActiveFilters] = useState<ActiveFilters>({
     categoria: null,
     region: null,
+  });
+
+  const [crossFilterConfig, setCrossFilterConfig] = useState({
+    categoria: true,
+    region: true,
   });
 
   const filteredData = useMemo(() => {
@@ -64,6 +75,9 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
   };
 
   const handleChartClick = (filterType: keyof ActiveFilters, value: string) => {
+    // Only apply cross-filter if it's enabled for that chart type
+    if (!crossFilterConfig[filterType]) return;
+
     // If clicking the same value again, reset the filter
     const newFilterValue = activeFilters[filterType] === value ? null : value;
     handleFilterChange(filterType, newFilterValue);
@@ -75,7 +89,6 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
 
   const handleGenerateSummary = async () => {
     setIsSummaryLoading(true);
-    // Passing filtered data to the summary action
     const result = await generateDashboardSummaryAction(dashboard, filteredData, page);
     setIsSummaryLoading(false);
 
@@ -101,23 +114,71 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
           <h1 className="text-4xl font-bold font-headline">{dashboard.name}</h1>
           <p className="text-muted-foreground">{page.name}</p>
         </div>
-        <Button onClick={handleGenerateSummary} disabled={isSummaryLoading}>
-          {isSummaryLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
-          )}
-          Generate AI Summary
-        </Button>
+        <div className="flex items-center gap-2">
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filtros
+                    </Button>
+                </SheetTrigger>
+                <SheetContent>
+                    <div className="p-4 space-y-6">
+                        <h3 className="text-lg font-semibold">Filtros Globales</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <Label className="mb-2 block">Categoría</Label>
+                                <Select
+                                    value={activeFilters.categoria || ALL_ITEMS_VALUE}
+                                    onValueChange={(value) => handleFilterChange('categoria', value === ALL_ITEMS_VALUE ? null : value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Filtrar por Categoría" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Categorías</SelectItem>
+                                        {uniqueCategories.map(cat => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div>
+                                <Label className="mb-2 block">Región</Label>
+                                <Select
+                                    value={activeFilters.region || ALL_ITEMS_VALUE}
+                                    onValueChange={(value) => handleFilterChange('region', value === ALL_ITEMS_VALUE ? null : value)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Filtrar por Región" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Regiones</SelectItem>
+                                        {uniqueRegions.map(reg => (
+                                            <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                        <Button variant="ghost" onClick={resetFilters} className="w-full">
+                            <X className="mr-2 h-4 w-4" />
+                            Limpiar Filtros
+                        </Button>
+                    </div>
+                </SheetContent>
+            </Sheet>
+            <Button onClick={handleGenerateSummary} disabled={isSummaryLoading}>
+            {isSummaryLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Wand2 className="mr-2 h-4 w-4" />
+            )}
+            Generate AI Summary
+            </Button>
+        </div>
       </header>
 
-      <FilterBar 
-        categories={uniqueCategories}
-        regions={uniqueRegions}
-        activeFilters={activeFilters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={resetFilters}
-      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard title="Total Ingresos" value={`$${kpis.totalIngresos.toLocaleString()}`} />
@@ -128,18 +189,34 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
 
       <div className="grid gap-8 md:grid-cols-2">
          <Card className="shadow-lg">
-           <CardHeader>
-             <CardTitle>Ingresos por Categoría</CardTitle>
-             <CardDescription>Haga clic en una sección para filtrar por categoría.</CardDescription>
-           </CardHeader>
+            <CardHeader>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Ingresos por Categoría</CardTitle>
+                        <CardDescription>Haga clic en una sección para filtrar.</CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="crossfilter-categoria" checked={crossFilterConfig.categoria} onCheckedChange={(checked) => setCrossFilterConfig(prev => ({ ...prev, categoria: checked }))} />
+                        <Label htmlFor="crossfilter-categoria" className="text-xs">Cross-filter</Label>
+                    </div>
+                </div>
+            </CardHeader>
            <CardContent>
               <InteractivePieChart data={dataByCategoria} onSliceClick={(categoria) => handleChartClick('categoria', categoria)} />
            </CardContent>
          </Card>
          <Card className="shadow-lg">
-           <CardHeader>
-             <CardTitle>Ingresos por Región</CardTitle>
-              <CardDescription>Haga clic en una barra para filtrar por región.</CardDescription>
+            <CardHeader>
+                 <div className="flex items-center justify-between">
+                    <div>
+                        <CardTitle>Ingresos por Región</CardTitle>
+                        <CardDescription>Haga clic en una barra para filtrar.</CardDescription>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch id="crossfilter-region" checked={crossFilterConfig.region} onCheckedChange={(checked) => setCrossFilterConfig(prev => ({ ...prev, region: checked }))} />
+                        <Label htmlFor="crossfilter-region" className="text-xs">Cross-filter</Label>
+                    </div>
+                </div>
            </CardHeader>
            <CardContent>
              <InteractiveBarChart data={dataByRegion} onBarClick={(region) => handleChartClick('region', region)} />

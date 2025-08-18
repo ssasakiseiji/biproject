@@ -1,22 +1,44 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, Edit, Trash2 } from 'lucide-react';
+import { getUsers } from '@/services/dataService';
+import type { User } from '@/lib/types';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!loading && user?.role !== 'admin') {
+    if (!authLoading && user?.role !== 'admin') {
       router.replace('/');
+    } else if (user?.role === 'admin') {
+      getUsers().then(data => {
+        setUsers(data);
+        setLoading(false);
+      });
     }
-  }, [user, loading, router]);
+  }, [user, authLoading, router]);
 
-  if (loading || user?.role !== 'admin') {
+  const handleEditPermissions = (userId: string) => {
+    console.log(`Edit permissions for user: ${userId}`);
+    alert(`(Prototype) Edit permissions for user: ${userId}`);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    console.log(`Delete user: ${userId}`);
+     alert(`(Prototype) Delete user: ${userId}`);
+  };
+
+
+  if (authLoading || user?.role !== 'admin') {
     return (
        <div className="flex h-screen w-full items-center justify-center p-4 md:p-8">
         <Card className="w-full max-w-md">
@@ -35,18 +57,47 @@ export default function AdminPage() {
         <div className="max-w-4xl mx-auto">
             <header className="mb-8">
                 <h1 className="text-4xl font-bold font-headline">Admin Panel</h1>
-                <p className="text-muted-foreground">Welcome, Administrator.</p>
+                <p className="text-muted-foreground">User Management</p>
             </header>
             <Card>
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <ShieldCheck className="h-8 w-8 text-primary" />
-                    <div>
-                        <CardTitle>System Status</CardTitle>
-                        <CardDescription>All systems are operational.</CardDescription>
-                    </div>
+                <CardHeader>
+                    <CardTitle>System Users</CardTitle>
+                     <CardDescription>Manage user roles and permissions.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <p>This is a protected area for administrators. Future administrative components and functionalities will be placed here.</p>
+                    {loading ? (
+                        <p>Loading users...</p>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {users.map((u) => (
+                                    <TableRow key={u.id}>
+                                        <TableCell className="font-medium">{u.name}</TableCell>
+                                        <TableCell>{u.email}</TableCell>
+                                        <TableCell>{u.role}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditPermissions(u.id)}>
+                                                <Edit className="h-4 w-4" />
+                                                <span className="sr-only">Edit Permissions</span>
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteUser(u.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                                <span className="sr-only">Delete User</span>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>

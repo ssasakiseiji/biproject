@@ -1,16 +1,20 @@
 {
-  "barChartData": [
-    { "name": "Jan", "value": 4000 },
-    { "name": "Feb", "value": 3000 },
-    { "name": "Mar", "value": 5000 },
-    { "name": "Apr", "value": 4500 },
-    { "name": "May", "value": 6000 },
-    { "name": "Jun", "value": 5500 }
-  ],
-  "pieChartData": [
-    { "name": "Salaries", "value": 400, "fill": "hsl(var(--chart-1))" },
-    { "name": "Marketing", "value": 300, "fill": "hsl(var(--chart-2))" },
-    { "name": "Operations", "value": 300, "fill": "hsl(var(--chart-3))" },
-    { "name": "R&D", "value": 200, "fill": "hsl(var(--chart-4))" }
-  ]
+  "results": {
+    "barChartData": [
+      { "name": "Jan", "value": 4000 },
+      { "name": "Feb", "value": 3000 },
+      { "name": "Mar", "value": 5000 },
+      { "name": "Apr", "value": 4500 },
+      { "name": "May", "value": 6000 },
+      { "name": "Jun", "value": 5500 }
+    ]
+  },
+  "accounts": {
+    "pieChartData": [
+      { "name": "Salaries", "value": 400, "fill": "hsl(var(--chart-1))" },
+      { "name": "Marketing", "value": 300, "fill": "hsl(var(--chart-2))" },
+      { "name": "Operations", "value": 300, "fill": "hsl(var(--chart-3))" },
+      { "name": "R&D", "value": 200, "fill": "hsl(var(--chart-4))" }
+    ]
+  }
 }

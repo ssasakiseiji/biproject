@@ -4,6 +4,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/context/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { ThemeContext } from '@/context/ThemeContext';
 
 export const metadata: Metadata = {
   title: 'BizzViz - Your Business Intelligence Partner',
@@ -22,12 +23,12 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className={cn("font-body antialiased", 'min-h-screen bg-background font-sans')}>
+      <body className={cn("font-sans antialiased", 'min-h-screen bg-background')}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            {children}
-            <Toaster />
-          </AuthProvider>
+            <AuthProvider>
+                    {children}
+                <Toaster />
+            </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

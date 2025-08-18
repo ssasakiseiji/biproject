@@ -2,18 +2,27 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'editor';
+}
+
+export interface DashboardPage {
+  id: string;
+  name: string;
 }
 
 export interface Dashboard {
   id: string;
   name: string;
   path: string;
+  pages?: DashboardPage[];
 }
 
 export interface Permission {
   userId: string;
-  dashboardIds: string[];
+  dashboardAccess: Array<{
+    dashboardId: string;
+    pageIds: string[];
+  }>;
 }
 
 export interface Settings {
@@ -32,7 +41,7 @@ export interface PieChartData {
   fill: string;
 }
 
-export interface DashboardData {
-  barChartData: BarChartData[];
-  pieChartData: PieChartData[];
-}
+export type DashboardData = {
+  barChartData?: BarChartData[];
+  pieChartData?: PieChartData[];
+} | Record<string, any>;

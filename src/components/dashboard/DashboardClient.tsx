@@ -1,13 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { Dashboard, DashboardData } from '@/lib/types';
+import type { Dashboard, DashboardData, DashboardPage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChartComponent } from './BarChart';
-import { PieChartComponent } from './PieChart';
 import { Wand2, Loader2 } from 'lucide-react';
-import { generateDashboardSummaryAction } from '@/app/(main)/dashboard/[dashboardId]/actions';
+import { generateDashboardSummaryAction } from './actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,13 +16,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { ChartComponent } from './ChartComponent';
 
 type DashboardClientProps = {
   initialData: DashboardData;
   dashboard: Dashboard;
+  page: DashboardPage;
 };
 
-export default function DashboardClient({ initialData, dashboard }: DashboardClientProps) {
+export default function DashboardClient({ initialData, dashboard, page }: DashboardClientProps) {
   const [data] = useState<DashboardData>(initialData);
   const [isSummaryLoading, setIsSummaryLoading] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -33,7 +33,7 @@ export default function DashboardClient({ initialData, dashboard }: DashboardCli
 
   const handleGenerateSummary = async () => {
     setIsSummaryLoading(true);
-    const result = await generateDashboardSummaryAction(dashboard, data);
+    const result = await generateDashboardSummaryAction(dashboard, data, page);
     setIsSummaryLoading(false);
 
     if (result.success) {
@@ -49,11 +49,11 @@ export default function DashboardClient({ initialData, dashboard }: DashboardCli
   };
   
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="space-y-8">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
         <div>
-          <h1 className="text-4xl font-bold font-headline">{dashboard.name} Dashboard</h1>
-          <p className="text-muted-foreground">Key insights and performance metrics.</p>
+          <h1 className="text-4xl font-bold font-headline">{dashboard.name}</h1>
+          <p className="text-muted-foreground">{page.name}</p>
         </div>
         <Button onClick={handleGenerateSummary} disabled={isSummaryLoading}>
           {isSummaryLoading ? (
@@ -65,23 +65,14 @@ export default function DashboardClient({ initialData, dashboard }: DashboardCli
         </Button>
       </header>
 
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4 shadow-lg">
+      <div className="grid gap-8">
+        <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle>Performance Overview</CardTitle>
-            <CardDescription>Bar chart showing key metrics over time.</CardDescription>
+            <CardTitle>Data Visualization</CardTitle>
+            <CardDescription>Visual representation of the data for the {page.name.toLowerCase()} page.</CardDescription>
           </CardHeader>
           <CardContent>
-            <BarChartComponent data={data.barChartData} />
-          </CardContent>
-        </Card>
-        <Card className="lg:col-span-3 shadow-lg">
-          <CardHeader>
-            <CardTitle>Metric Distribution</CardTitle>
-            <CardDescription>Pie chart breaking down performance categories.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PieChartComponent data={data.pieChartData} />
+            <ChartComponent data={data} />
           </CardContent>
         </Card>
       </div>
@@ -91,7 +82,7 @@ export default function DashboardClient({ initialData, dashboard }: DashboardCli
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
                 <Wand2 className="h-5 w-5 text-primary" />
-                AI-Powered Summary
+                AI-Powered Summary for {page.name}
             </AlertDialogTitle>
             <AlertDialogDescription className="pt-4 text-foreground">
               {summary}

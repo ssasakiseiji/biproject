@@ -1,9 +1,15 @@
 'use server';
 
-import type { Dashboard, DashboardData } from '@/lib/types';
-import { mockDashboards, mockPermissions } from '@/_mock/db';
+import type { Dashboard, DashboardData, User, DashboardPage } from '@/lib/types';
+import { mockDashboards, mockPermissions, mockUsers } from '@/_mock/db';
 import financials from '@/_mock/dashboardData/financials.json';
 import sales from '@/_mock/dashboardData/sales.json';
+
+const allDashboardData: Record<string, any> = {
+  financials,
+  sales,
+};
+
 
 export async function getAccessibleDashboards(userId: string): Promise<Dashboard[]> {
   return new Promise((resolve) => {
@@ -13,7 +19,15 @@ export async function getAccessibleDashboards(userId: string): Promise<Dashboard
         resolve([]);
         return;
       }
-      const accessibleDashboards = mockDashboards.filter(d => userPermissions.dashboardIds.includes(d.id));
+      
+      const accessibleDashboards = mockDashboards.filter(d => 
+        userPermissions.dashboardAccess.some(da => da.dashboardId === d.id)
+      ).map(dashboard => {
+        const userAccess = userPermissions.dashboardAccess.find(da => da.dashboardId === dashboard.id);
+        const accessiblePages = dashboard.pages?.filter(p => userAccess?.pageIds.includes(p.id)) || [];
+        return { ...dashboard, pages: accessiblePages };
+      });
+
       resolve(accessibleDashboards);
     }, 200);
   });
@@ -23,19 +37,33 @@ export async function getDashboardById(dashboardId: string): Promise<Dashboard |
     return mockDashboards.find(d => d.id === dashboardId);
 }
 
-export async function getDashboardData(dashboardId: string): Promise<DashboardData> {
-  // This function is intended to run on the server.
-  // In a real app, this would fetch from a database or API.
-  // For this prototype, we'll read from the imported JSON files.
+
+export async function getDashboardPages(dashboardId: string): Promise<DashboardPage[]> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const dashboard = mockDashboards.find(d => d.id === dashboardId);
+      resolve(dashboard?.pages || []);
+    }, 100);
+  });
+}
+
+export async function getPageData(dashboardId: string, pageId: string): Promise<DashboardData> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (dashboardId === 'financials') {
-        resolve(financials as DashboardData);
-      } else if (dashboardId === 'sales') {
-        resolve(sales as DashboardData);
+      const dashboardJson = allDashboardData[dashboardId];
+      if (dashboardJson && dashboardJson[pageId]) {
+        resolve(dashboardJson[pageId]);
       } else {
-        reject(new Error(`Dashboard data for ${dashboardId} not found.`));
+        reject(new Error(`Data for dashboard '${dashboardId}' page '${pageId}' not found.`));
       }
     }, 200);
   });
+}
+
+export async function getUsers(): Promise<User[]> {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(mockUsers);
+        }, 150);
+    });
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { getAccessibleDashboards } from '@/services/dataService';
@@ -9,7 +9,6 @@ import type { Dashboard } from '@/lib/types';
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [isRedirecting, setIsRedirecting] = useState(true);
 
   useEffect(() => {
     if (!loading) {
@@ -17,16 +16,20 @@ export default function HomePage() {
         getAccessibleDashboards(user.id)
           .then((dashboards: Dashboard[]) => {
             if (dashboards.length > 0) {
-              router.replace(`/dashboard/${dashboards[0].id}`);
+              const firstDashboard = dashboards[0];
+              if (firstDashboard.pages && firstDashboard.pages.length > 0) {
+                 router.replace(`/dashboard/${firstDashboard.id}/${firstDashboard.pages[0].id}`);
+              } else {
+                // Fallback if a dashboard has no pages
+                router.replace(`/dashboard/${firstDashboard.id}`);
+              }
             } else {
-              // Handle case where user has no dashboards
-              // For now, just stay on a loading-like page
-              // In a real app, you might show a "No dashboards" message
-              setIsRedirecting(false); 
+              // In a real app, show a "No dashboards" message
+              // For now, redirecting to a generic dashboard route
+               router.replace('/dashboard/no-access');
             }
           })
           .catch(() => {
-            // Handle error fetching dashboards
             router.replace('/login');
           });
       } else {

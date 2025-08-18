@@ -12,6 +12,7 @@ type ChartData = {
 type InteractivePieChartProps = {
     data: ChartData[];
     onSliceClick: (name: string) => void;
+    chartId: string;
 }
 
 const COLORS = [
@@ -22,12 +23,12 @@ const COLORS = [
     'hsl(var(--chart-5))'
 ];
 
-export function InteractivePieChart({ data, onSliceClick }: InteractivePieChartProps) {
+export function InteractivePieChart({ data, onSliceClick, chartId }: InteractivePieChartProps) {
     const { theme } = useTheme();
     const tickColor = theme === 'dark' ? '#f5f5f5' : '#333';
     
     return (
-        <div className="h-96 w-full">
+        <div className="h-96 w-full" id={chartId}>
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie

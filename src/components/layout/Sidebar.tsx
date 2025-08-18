@@ -164,7 +164,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:block w-64 flex-shrink-0 border-r">
+      <aside className="hidden lg:block w-64 flex-shrink-0 border-r fixed h-full z-20">
         {sidebarContent}
       </aside>
 

@@ -12,15 +12,16 @@ type ChartData = {
 type InteractiveBarChartProps = {
     data: ChartData[];
     onBarClick: (name: string) => void;
+    chartId: string;
 };
 
-export function InteractiveBarChart({ data, onBarClick }: InteractiveBarChartProps) {
+export function InteractiveBarChart({ data, onBarClick, chartId }: InteractiveBarChartProps) {
     const { theme } = useTheme();
     const tickColor = theme === 'dark' ? '#f5f5f5' : '#333';
     const primaryColor = 'hsl(var(--primary))';
     
     return (
-        <div className="h-96 w-full">
+        <div className="h-96 w-full" id={chartId}>
             <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }} onClick={(payload) => {
                     if (payload && payload.activeLabel) {

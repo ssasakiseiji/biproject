@@ -4,8 +4,12 @@
 import { useState, useMemo } from 'react';
 import type { Dashboard, DashboardPage, Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Loader2, Filter, X } from 'lucide-react';
+import {
+  Wand2,
+  Loader2,
+  Filter,
+  X,
+} from 'lucide-react';
 import { generateDashboardSummaryAction } from './actions';
 import {
   AlertDialog,
@@ -24,8 +28,8 @@ import { InteractivePieChart } from './InteractivePieChart';
 import { DataTable } from './DataTable';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Label } from '../ui/label';
-import { Switch } from '../ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { VisualCard } from './VisualCard';
 
 type DashboardClientProps = {
   initialData: Transaction[];
@@ -53,10 +57,19 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
     region: null,
   });
 
-  const [crossFilterConfig, setCrossFilterConfig] = useState({
-    categoria: true,
-    region: true,
-  });
+  const [excludedVisuals, setExcludedVisuals] = useState(new Set<string>());
+
+  const handleToggleExclude = (visualId: string) => {
+    setExcludedVisuals(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(visualId)) {
+            newSet.delete(visualId);
+        } else {
+            newSet.add(visualId);
+        }
+        return newSet;
+    });
+  };
 
   const filteredData = useMemo(() => {
     return originalData.filter(item => {
@@ -75,8 +88,8 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
   };
 
   const handleChartClick = (filterType: keyof ActiveFilters, value: string) => {
-    // Only apply cross-filter if it's enabled for that chart type
-    if (!crossFilterConfig[filterType]) return;
+    const visualId = filterType === 'categoria' ? 'pie-chart' : 'bar-chart';
+    if(excludedVisuals.has(visualId)) return;
 
     // If clicking the same value again, reset the filter
     const newFilterValue = activeFilters[filterType] === value ? null : value;
@@ -188,52 +201,47 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
       </div>
 
       <div className="grid gap-8 md:grid-cols-2">
-         <Card className="shadow-lg">
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>Ingresos por Categoría</CardTitle>
-                        <CardDescription>Haga clic en una sección para filtrar.</CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch id="crossfilter-categoria" checked={crossFilterConfig.categoria} onCheckedChange={(checked) => setCrossFilterConfig(prev => ({ ...prev, categoria: checked }))} />
-                        <Label htmlFor="crossfilter-categoria" className="text-xs">Cross-filter</Label>
-                    </div>
-                </div>
-            </CardHeader>
-           <CardContent>
-              <InteractivePieChart data={dataByCategoria} onSliceClick={(categoria) => handleChartClick('categoria', categoria)} />
-           </CardContent>
-         </Card>
-         <Card className="shadow-lg">
-            <CardHeader>
-                 <div className="flex items-center justify-between">
-                    <div>
-                        <CardTitle>Ingresos por Región</CardTitle>
-                        <CardDescription>Haga clic en una barra para filtrar.</CardDescription>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch id="crossfilter-region" checked={crossFilterConfig.region} onCheckedChange={(checked) => setCrossFilterConfig(prev => ({ ...prev, region: checked }))} />
-                        <Label htmlFor="crossfilter-region" className="text-xs">Cross-filter</Label>
-                    </div>
-                </div>
-           </CardHeader>
-           <CardContent>
-             <InteractiveBarChart data={dataByRegion} onBarClick={(region) => handleChartClick('region', region)} />
-           </CardContent>
-         </Card>
+        <VisualCard
+            title="Ingresos por Categoría"
+            visualId="pie-chart"
+            isExcluded={excludedVisuals.has('pie-chart')}
+            onToggleExclude={handleToggleExclude}
+            exportType="image"
+            exportData={dataByCategoria}
+        >
+            <InteractivePieChart 
+                chartId="pie-chart-element"
+                data={dataByCategoria} 
+                onSliceClick={(categoria) => handleChartClick('categoria', categoria)} 
+            />
+        </VisualCard>
+        <VisualCard
+            title="Ingresos por Región"
+            visualId="bar-chart"
+            isExcluded={excludedVisuals.has('bar-chart')}
+            onToggleExclude={handleToggleExclude}
+            exportType="image"
+            exportData={dataByRegion}
+        >
+            <InteractiveBarChart
+                chartId="bar-chart-element"
+                data={dataByRegion} 
+                onBarClick={(region) => handleChartClick('region', region)} 
+            />
+        </VisualCard>
       </div>
 
       <div>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Detalle de Transacciones</CardTitle>
-             <CardDescription>Datos filtrados basados en sus selecciones.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable data={filteredData} />
-          </CardContent>
-        </Card>
+        <VisualCard
+            title="Detalle de Transacciones"
+            visualId="data-table"
+            isExcluded={excludedVisuals.has('data-table')}
+            onToggleExclude={handleToggleExclude}
+            exportType="csv"
+            exportData={filteredData}
+        >
+            <DataTable data={filteredData} tableId="data-table-element" />
+        </VisualCard>
       </div>
 
        <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

@@ -14,11 +14,12 @@ import { ScrollArea } from "../ui/scroll-area";
 
 type DataTableProps = {
     data: Transaction[];
+    tableId: string;
 };
 
-export function DataTable({ data }: DataTableProps) {
+export function DataTable({ data, tableId }: DataTableProps) {
     return (
-        <ScrollArea className="h-96">
+        <ScrollArea className="h-96" id={tableId}>
             <Table>
                 <TableHeader>
                     <TableRow>

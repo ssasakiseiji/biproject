@@ -4,17 +4,30 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MoreVertical, Filter, FilterX, BarChart, FileDown } from 'lucide-react';
+import { MoreVertical, FilterX, BarChart, FileDown, Filter as FilterIcon } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+  DropdownMenuCheckboxItem
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check } from 'lucide-react';
 import { exportComponentAsPng, exportToCsv } from '@/utils/exportUtils';
 import type { Transaction, BarChartData } from '@/lib/types';
 import { cn } from '@/lib/utils';
+
+type FilterOption = {
+    value: string;
+    label: string;
+};
 
 type VisualCardProps = {
   title: string;
@@ -24,6 +37,9 @@ type VisualCardProps = {
   onToggleExclude: (visualId: string) => void;
   exportType: 'csv' | 'image';
   exportData: Transaction[] | BarChartData[];
+  filterOptions: FilterOption[];
+  onFilterChange: (value: string) => void;
+  activeFilter?: string | null;
 };
 
 export function VisualCard({
@@ -33,9 +49,13 @@ export function VisualCard({
   isExcluded,
   onToggleExclude,
   exportType,
-  exportData
+  exportData,
+  filterOptions,
+  onFilterChange,
+  activeFilter
 }: VisualCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
 
   const handleExport = () => {
     const elementId = `${visualId}-element`;
@@ -43,10 +63,17 @@ export function VisualCard({
     
     if (exportType === 'image') {
       exportComponentAsPng(elementId, filename);
-    } else if (exportType === 'csv' && 'id' in exportData[0]) {
+    } else if (exportType === 'csv' && exportData.length > 0 && 'id' in exportData[0]) {
       exportToCsv(exportData as Transaction[], filename);
     }
   };
+
+  const handleFilterSelect = (value: string) => {
+    onFilterChange(value);
+    setFilterPopoverOpen(false);
+  }
+
+  const isFilterable = filterOptions && filterOptions.length > 0;
 
   return (
     <TooltipProvider>
@@ -64,17 +91,49 @@ export function VisualCard({
                       isHovered ? "opacity-100" : "opacity-0 focus-within:opacity-100"
                   )}
               >
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                           <Button variant="ghost" size="icon" onClick={() => onToggleExclude(visualId)}>
-                              {isExcluded ? <FilterX className="h-4 w-4 text-accent" /> : <Filter className="h-4 w-4" />}
-                              <span className="sr-only">{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</span>
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</p>
-                      </TooltipContent>
-                  </Tooltip>
+                  {isFilterable && (
+                    <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                            <PopoverTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                  <FilterIcon className="h-4 w-4" />
+                                  <span className="sr-only">Apply Filter</span>
+                              </Button>
+                            </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Apply Filter</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <PopoverContent className="w-[200px] p-0" align="end">
+                         <Command>
+                            <CommandInput placeholder="Search filter..." />
+                            <CommandList>
+                              <CommandEmpty>No options found.</CommandEmpty>
+                              <CommandGroup>
+                                {filterOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.value}
+                                    value={option.value}
+                                    onSelect={() => handleFilterSelect(option.value)}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        activeFilter === option.value ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {option.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                         </Command>
+                      </PopoverContent>
+                    </Popover>
+                  )}
+
 
                   <DropdownMenu>
                       <Tooltip>
@@ -91,6 +150,10 @@ export function VisualCard({
                           </TooltipContent>
                       </Tooltip>
                       <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => onToggleExclude(visualId)}>
+                              <FilterX className="mr-2 h-4 w-4" />
+                              <span>{isExcluded ? 'Include in cross-filter' : 'Exclude from cross-filter'}</span>
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={handleExport}>
                               {exportType === 'image' ? <BarChart className="mr-2 h-4 w-4"/> : <FileDown className="mr-2 h-4 w-4"/>}
                               <span>Export as {exportType === 'image' ? 'PNG' : 'CSV'}</span>

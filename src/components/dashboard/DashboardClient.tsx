@@ -208,6 +208,9 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
             onToggleExclude={handleToggleExclude}
             exportType="image"
             exportData={dataByCategoria}
+            filterOptions={uniqueCategories.map(c => ({ value: c, label: c }))}
+            onFilterChange={(value) => handleChartClick('categoria', value)}
+            activeFilter={activeFilters.categoria}
         >
             <InteractivePieChart 
                 chartId="pie-chart-element"
@@ -222,6 +225,9 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
             onToggleExclude={handleToggleExclude}
             exportType="image"
             exportData={dataByRegion}
+            filterOptions={uniqueRegions.map(r => ({ value: r, label: r }))}
+            onFilterChange={(value) => handleChartClick('region', value)}
+            activeFilter={activeFilters.region}
         >
             <InteractiveBarChart
                 chartId="bar-chart-element"
@@ -239,6 +245,8 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
             onToggleExclude={handleToggleExclude}
             exportType="csv"
             exportData={filteredData}
+            filterOptions={[]}
+            onFilterChange={() => {}}
         >
             <DataTable data={filteredData} tableId="data-table-element" />
         </VisualCard>

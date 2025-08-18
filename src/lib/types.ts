@@ -1,3 +1,4 @@
+
 export interface User {
   id: string;
   name: string;
@@ -45,3 +46,21 @@ export type DashboardData = {
   barChartData?: BarChartData[];
   pieChartData?: PieChartData[];
 } | Record<string, any>;
+
+
+export interface Transaction {
+  id: string;
+  fecha: string;
+  categoria: string;
+  producto: string;
+  region: string;
+  ingresos: number;
+  unidadesVendidas: number;
+}
+
+export interface KPIs {
+    totalIngresos: number;
+    totalUnidadesVendidas: number;
+    promedioVenta: number;
+    totalTransacciones: number;
+}

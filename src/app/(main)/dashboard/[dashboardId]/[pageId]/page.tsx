@@ -1,7 +1,8 @@
+
 import { getDashboardById, getPageData } from '@/services/dataService';
 import DashboardClient from '@/components/dashboard/DashboardClient';
 import { notFound } from 'next/navigation';
-import type { DashboardData } from '@/lib/types';
+import type { Transaction } from '@/lib/types';
 
 type DashboardPageProps = {
   params: {
@@ -27,7 +28,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
 
   try {
     const [pageData, dashboard] = await Promise.all([
-      getPageData(dashboardId, pageId) as Promise<DashboardData>,
+      getPageData(dashboardId, pageId) as Promise<Transaction[]>,
       getDashboardById(dashboardId)
     ]);
     

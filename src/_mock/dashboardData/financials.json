@@ -1,20 +1,23 @@
-{
-  "results": {
-    "barChartData": [
-      { "name": "Jan", "value": 4000 },
-      { "name": "Feb", "value": 3000 },
-      { "name": "Mar", "value": 5000 },
-      { "name": "Apr", "value": 4500 },
-      { "name": "May", "value": 6000 },
-      { "name": "Jun", "value": 5500 }
-    ]
-  },
-  "accounts": {
-    "pieChartData": [
-      { "name": "Salaries", "value": 400, "fill": "hsl(var(--chart-1))" },
-      { "name": "Marketing", "value": 300, "fill": "hsl(var(--chart-2))" },
-      { "name": "Operations", "value": 300, "fill": "hsl(var(--chart-3))" },
-      { "name": "R&D", "value": 200, "fill": "hsl(var(--chart-4))" }
-    ]
-  }
-}
+
+[
+  { "id": "txn-001", "fecha": "2025-07-01", "categoria": "Hardware", "producto": "Laptop Pro", "region": "Norte", "ingresos": 1500, "unidadesVendidas": 1 },
+  { "id": "txn-002", "fecha": "2025-07-01", "categoria": "Software", "producto": "OS License", "region": "Norte", "ingresos": 150, "unidadesVendidas": 1 },
+  { "id": "txn-003", "fecha": "2025-07-02", "categoria": "Accesorios", "producto": "Mouse Inalámbrico", "region": "Sur", "ingresos": 50, "unidadesVendidas": 2 },
+  { "id": "txn-004", "fecha": "2025-07-03", "categoria": "Hardware", "producto": "Monitor 4K", "region": "Este", "ingresos": 800, "unidadesVendidas": 2 },
+  { "id": "txn-005", "fecha": "2025-07-04", "categoria": "Software", "producto": "Suite de Diseño", "region": "Oeste", "ingresos": 300, "unidadesVendidas": 1 },
+  { "id": "txn-006", "fecha": "2025-07-05", "categoria": "Hardware", "producto": "Laptop Pro", "region": "Norte", "ingresos": 3000, "unidadesVendidas": 2 },
+  { "id": "txn-007", "fecha": "2025-07-06", "categoria": "Accesorios", "producto": "Teclado Mecánico", "region": "Sur", "ingresos": 120, "unidadesVendidas": 1 },
+  { "id": "txn-008", "fecha": "2025-07-07", "categoria": "Software", "producto": "Antivirus Pro", "region": "Este", "ingresos": 100, "unidadesVendidas": 2 },
+  { "id": "txn-009", "fecha": "2025-07-08", "categoria": "Hardware", "producto": "Monitor 4K", "region": "Norte", "ingresos": 1600, "unidadesVendidas": 4 },
+  { "id": "txn-010", "fecha": "2025-07-09", "categoria": "Accesorios", "producto": "Webcam HD", "region": "Oeste", "ingresos": 80, "unidadesVendidas": 1 },
+  { "id": "txn-011", "fecha": "2025-07-10", "categoria": "Hardware", "producto": "Laptop Pro", "region": "Este", "ingresos": 1500, "unidadesVendidas": 1 },
+  { "id": "txn-012", "fecha": "2025-07-11", "categoria": "Software", "producto": "OS License", "region": "Sur", "ingresos": 300, "unidadesVendidas": 2 },
+  { "id": "txn-013", "fecha": "2025-07-12", "categoria": "Accesorios", "producto": "Mouse Inalámbrico", "region": "Norte", "ingresos": 75, "unidadesVendidas": 3 },
+  { "id": "txn-014", "fecha": "2025-07-13", "categoria": "Hardware", "producto": "Monitor 4K", "region": "Oeste", "ingresos": 800, "unidadesVendidas": 2 },
+  { "id": "txn-015", "fecha": "2025-07-14", "categoria": "Software", "producto": "Suite de Diseño", "region": "Este", "ingresos": 600, "unidadesVendidas": 2 },
+  { "id": "txn-016", "fecha": "2025-07-15", "categoria": "Hardware", "producto": "Laptop Pro", "region": "Norte", "ingresos": 4500, "unidadesVendidas": 3 },
+  { "id": "txn-017", "fecha": "2025-07-16", "categoria": "Accesorios", "producto": "Teclado Mecánico", "region": "Sur", "ingresos": 240, "unidadesVendidas": 2 },
+  { "id": "txn-018", "fecha": "2025-07-17", "categoria": "Software", "producto": "Antivirus Pro", "region": "Oeste", "ingresos": 50, "unidadesVendidas": 1 },
+  { "id": "txn-019", "fecha": "2025-07-18", "categoria": "Hardware", "producto": "Monitor 4K", "region": "Este", "ingresos": 2400, "unidadesVendidas": 6 },
+  { "id": "txn-020", "fecha": "2025-07-19", "categoria": "Accesorios", "producto": "Webcam HD", "region": "Norte", "ingresos": 160, "unidadesVendidas": 2 }
+]

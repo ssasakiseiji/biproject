@@ -1,13 +1,14 @@
+
 'use server';
 
-import type { Dashboard, DashboardData, User, DashboardPage } from '@/lib/types';
+import type { Dashboard, DashboardData, User, DashboardPage, Transaction } from '@/lib/types';
 import { mockDashboards, mockPermissions, mockUsers } from '@/_mock/db';
-import financials from '@/_mock/dashboardData/financials.json';
-import sales from '@/_mock/dashboardData/sales.json';
+import financialsData from '@/_mock/dashboardData/financials.json';
+import salesData from '@/_mock/dashboardData/sales.json';
 
 const allDashboardData: Record<string, any> = {
-  financials,
-  sales,
+  financials: financialsData,
+  sales: salesData,
 };
 
 
@@ -24,7 +25,8 @@ export async function getAccessibleDashboards(userId: string): Promise<Dashboard
         userPermissions.dashboardAccess.some(da => da.dashboardId === d.id)
       ).map(dashboard => {
         const userAccess = userPermissions.dashboardAccess.find(da => da.dashboardId === dashboard.id);
-        const accessiblePages = dashboard.pages?.filter(p => userAccess?.pageIds.includes(p.id)) || [];
+        // For this interactive prototype, all pages under an accessible dashboard are available
+        const accessiblePages = dashboard.pages || [];
         return { ...dashboard, pages: accessiblePages };
       });
 
@@ -47,14 +49,15 @@ export async function getDashboardPages(dashboardId: string): Promise<DashboardP
   });
 }
 
-export async function getPageData(dashboardId: string, pageId: string): Promise<DashboardData> {
+export async function getPageData(dashboardId: string, pageId: string): Promise<Transaction[]> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const dashboardJson = allDashboardData[dashboardId];
-      if (dashboardJson && dashboardJson[pageId]) {
-        resolve(dashboardJson[pageId]);
+      const dashboardData = allDashboardData[dashboardId];
+      if (dashboardData) {
+        // Now returns the entire array of transactions for client-side processing
+        resolve(dashboardData);
       } else {
-        reject(new Error(`Data for dashboard '${dashboardId}' page '${pageId}' not found.`));
+        reject(new Error(`Data for dashboard '${dashboardId}' not found.`));
       }
     }, 200);
   });

@@ -2,9 +2,30 @@
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import type { PieChartData } from '@/lib/types';
+import { useTheme } from 'next-themes';
 
-export function PieChartComponent({ data }: { data: PieChartData[] }) {
+type ChartData = {
+  name: string;
+  value: number;
+};
+
+type InteractivePieChartProps = {
+    data: ChartData[];
+    onSliceClick: (name: string) => void;
+}
+
+const COLORS = [
+    'hsl(var(--chart-1))', 
+    'hsl(var(--chart-2))', 
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))'
+];
+
+export function InteractivePieChart({ data, onSliceClick }: InteractivePieChartProps) {
+    const { theme } = useTheme();
+    const tickColor = theme === 'dark' ? '#f5f5f5' : '#333';
+    
     return (
         <div className="h-96 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -18,9 +39,10 @@ export function PieChartComponent({ data }: { data: PieChartData[] }) {
                         fill="#8884d8"
                         dataKey="value"
                         nameKey="name"
+                        onClick={(payload) => onSliceClick(payload.name)}
                     >
                         {data.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} className="cursor-pointer" />
                         ))}
                     </Pie>
                     <Tooltip
@@ -37,7 +59,7 @@ export function PieChartComponent({ data }: { data: PieChartData[] }) {
                         layout="vertical" 
                         verticalAlign="middle" 
                         align="right"
-                        wrapperStyle={{ right: -10 }}
+                        wrapperStyle={{ right: -10, color: tickColor }}
                     />
                 </PieChart>
             </ResponsiveContainer>

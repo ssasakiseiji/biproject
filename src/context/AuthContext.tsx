@@ -4,7 +4,7 @@ import { createContext, useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import type { User } from '@/lib/types';
-import { ThemeContext, useThemeContext } from './ThemeContext';
+import { ThemeProvider } from './ThemeContext';
 
 interface AuthContextType {
   user: User | null;
@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-        <ThemeContext>
+        <ThemeProvider>
          {children}
-        </ThemeContext>
+        </ThemeProvider>
     </AuthContext.Provider>
   );
 }

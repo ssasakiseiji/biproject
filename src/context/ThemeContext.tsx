@@ -5,26 +5,22 @@ import { useTheme as useNextTheme } from "next-themes";
 
 type ThemeContextType = {
     theme: string;
-    toggleTheme: () => void;
+    setTheme: (theme: string) => void;
 };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const { theme: nextTheme, setTheme } = useNextTheme();
-    const [theme, setInternalTheme] = useState('light');
+    const { theme: nextTheme, setTheme: setNextTheme } = useNextTheme();
+    
+    // Use the theme from next-themes, defaulting to 'light' if system or undefined.
+    const theme = nextTheme === 'system' ? 'light' : nextTheme || 'light';
 
-    useEffect(() => {
-        setInternalTheme(nextTheme === 'system' ? 'light' : nextTheme || 'light');
-    }, [nextTheme]);
-
-    const toggleTheme = () => {
-        const newTheme = theme === "light" ? "dark" : "light";
-        setTheme(newTheme);
-        setInternalTheme(newTheme);
+    const setTheme = (newTheme: string) => {
+        setNextTheme(newTheme);
     };
 
-    const value = useMemo(() => ({ theme, toggleTheme }), [theme]);
+    const value = useMemo(() => ({ theme, setTheme }), [theme, setNextTheme]);
     
     return (
         <ThemeContext.Provider value={value}>

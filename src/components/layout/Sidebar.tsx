@@ -65,13 +65,6 @@ export function Sidebar() {
      closeSheet();
   };
 
-  const handleAiAnalystClick = () => {
-    toast({
-        title: "AI Analyst",
-        description: "This feature is coming soon!",
-    });
-  }
-
   const closeSheet = () => setIsMobileSheetOpen(false);
 
   const sidebarContent = (
@@ -141,9 +134,15 @@ export function Sidebar() {
       </nav>
 
       <footer className="mt-auto space-y-2 border-t p-4">
-         <Button variant="ghost" className="w-full justify-start" onClick={handleAiAnalystClick}>
-            <Wand2 className="mr-2 h-4 w-4" />
-            AI Analyst
+        <Button
+            asChild
+            variant={pathname.startsWith('/ai-analyst') ? 'secondary' : 'ghost'}
+            className="w-full justify-start"
+            >
+            <Link href="/ai-analyst" onClick={closeSheet}>
+                <Wand2 className="mr-2 h-4 w-4" />
+                AI Analyst
+            </Link>
         </Button>
          <Button
             asChild

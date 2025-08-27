@@ -1,4 +1,3 @@
-
 'use client';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -25,6 +24,8 @@ const COLORS = [
 
 export function InteractivePieChart({ data, onSliceClick, chartId }: InteractivePieChartProps) {
     const { theme } = useTheme();
+    // --- LÓGICA DE COLOR DINÁMICO ---
+    const tooltipTextColor = theme === 'dark' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground))';
     const tickColor = theme === 'dark' ? '#f5f5f5' : '#333';
     
     return (
@@ -52,8 +53,9 @@ export function InteractivePieChart({ data, onSliceClick, chartId }: Interactive
                             background: 'hsl(var(--background))',
                             border: '1px solid hsl(var(--border))',
                             borderRadius: 'var(--radius)',
-                            color: 'hsl(var(--foreground))'
                         }}
+                        // --- ESTILO DINÁMICO APLICADO ---
+                        itemStyle={{ color: tooltipTextColor }}
                     />
                     <Legend 
                         iconSize={10} 

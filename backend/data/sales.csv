@@ -1,0 +1,21 @@
+id,fecha,categoria,producto,region,ingresos,unidadesVendidas
+sale-001,2025-01-15,Bebidas,Café Grano,Norte,2500,100
+sale-002,2025-01-16,Snacks,Barra Energética,Sur,800,200
+sale-003,2025-01-17,Lácteos,Yogurt Natural,Este,1200,300
+sale-004,2025-02-10,Bebidas,Té Verde,Oeste,1800,150
+sale-005,2025-02-12,Snacks,Papas Fritas,Norte,3000,500
+sale-006,2025-02-14,Lácteos,Leche Entera,Sur,2200,400
+sale-007,2025-03-05,Bebidas,Jugo Naranja,Este,2800,250
+sale-008,2025-03-08,Snacks,Nueces Mixtas,Oeste,4500,180
+sale-009,2025-03-20,Lácteos,Queso Fresco,Norte,3500,120
+sale-010,2025-04-01,Bebidas,Café Grano,Sur,2800,110
+sale-011,2025-04-05,Snacks,Galletas Chocolate,Este,1500,400
+sale-012,2025-04-10,Lácteos,Mantequilla,Oeste,900,200
+sale-013,2025-05-18,Bebidas,Agua Mineral,Norte,1100,600
+sale-014,2025-05-21,Snacks,Barra Energética,Sur,1000,250
+sale-015,2025-05-25,Lácteos,Yogurt Natural,Este,1400,350
+sale-016,2025-06-02,Bebidas,Té Verde,Oeste,2000,180
+sale-017,2025-06-11,Snacks,Papas Fritas,Norte,3200,550
+sale-018,2025-06-15,Lácteos,Leche Entera,Sur,2500,450
+sale-019,2025-07-07,Bebidas,Jugo Naranja,Este,3100,280
+sale-020,2025-07-22,Snacks,Nueces Mixtas,Oeste,4800,200

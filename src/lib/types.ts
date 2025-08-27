@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   name: string;
@@ -42,10 +41,7 @@ export interface PieChartData {
   fill: string;
 }
 
-export type DashboardData = {
-  barChartData?: BarChartData[];
-  pieChartData?: PieChartData[];
-} | Record<string, any>;
+export type DashboardData = Record<string, any>;
 
 
 export interface Transaction {

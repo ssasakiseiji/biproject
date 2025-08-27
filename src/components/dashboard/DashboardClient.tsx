@@ -1,35 +1,30 @@
-
 'use client';
 
-import { useState, useMemo, Fragment } from 'react';
+import { useState, useMemo } from 'react';
 import type { Dashboard, DashboardPage, Transaction } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import {
-  Wand2,
-  Loader2,
-  Filter,
-  X,
-} from 'lucide-react';
-import { generateDashboardSummaryAction } from './actions';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { Filter, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { calculateKPIs, aggregateData } from '@/utils/dataProcessor';
 import { KPICard } from './KPICard';
 import { InteractiveBarChart } from './InteractiveBarChart';
 import { InteractivePieChart } from './InteractivePieChart';
 import { DataTable } from './DataTable';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Label } from '../ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { VisualCard } from './VisualCard';
+// 1. Importar componentes para el panel de filtros
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+  SheetClose,
+} from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import dashboardConfig from '@/_mock/dashboardConfigs/sales.json';
 
 type DashboardClientProps = {
   initialData: Transaction[];
@@ -38,113 +33,106 @@ type DashboardClientProps = {
 };
 
 type ActiveFilters = {
-    categoria: string | null;
-    region: string | null;
+    [key: string]: string | null;
+};
+
+const componentMap = {
+    kpi: KPICard,
+    interactive_bar_chart: InteractiveBarChart,
+    interactive_pie_chart: InteractivePieChart,
+    data_table: DataTable,
+};
+
+const formatValue = (value: any, format?: string, precision?: number) => {
+    if (value === undefined || value === null) return 'N/A';
+    if (format === 'currency') {
+        return `$${Number(value).toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })}`;
+    }
+    return value.toLocaleString();
 };
 
 const ALL_ITEMS_VALUE = '__ALL__';
 
-
 export default function DashboardClient({ initialData, dashboard, page }: DashboardClientProps) {
   const [originalData] = useState<Transaction[]>(initialData);
-  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-  const [summary, setSummary] = useState<string | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  
-  const [activeFilters, setActiveFilters] = useState<ActiveFilters>({
-    categoria: null,
-    region: null,
-  });
+  const [activeFilters, setActiveFilters] = useState<ActiveFilters>({});
 
-  const [excludedVisuals, setExcludedVisuals] = useState(new Set<string>());
+  // 2. Extraer opciones únicas para los selectores de filtro
+  const uniqueRegions = useMemo(() => [...new Set(originalData.map(item => item.region))], [originalData]);
+  const uniqueCategories = useMemo(() => [...new Set(originalData.map(item => item.categoria))], [originalData]);
 
-  const handleToggleExclude = (visualId: string) => {
-    setExcludedVisuals(prev => {
-        const newSet = new Set(prev);
-        if (newSet.has(visualId)) {
-            newSet.delete(visualId);
-        } else {
-            newSet.add(visualId);
+  const currentPageConfig = useMemo(() => {
+    return dashboardConfig.pages.find(p => p.pageId === page.id);
+  }, [page.id]);
+
+  useMemo(() => {
+    if (currentPageConfig) {
+      const maxColumns = currentPageConfig.grid.columns;
+      currentPageConfig.visuals.forEach(visual => {
+        if (visual.grid_position.x + visual.grid_position.w > maxColumns) {
+          console.error(
+            `Error de configuración: La visualización "${visual.title}" (ID: ${visual.id}) excede el número máximo de columnas (${maxColumns}).`
+          );
         }
-        return newSet;
-    });
-  };
+      });
+    }
+  }, [currentPageConfig]);
 
   const filteredData = useMemo(() => {
     return originalData.filter(item => {
-      const categoriaMatch = !activeFilters.categoria || item.categoria === activeFilters.categoria;
-      const regionMatch = !activeFilters.region || item.region === activeFilters.region;
-      return categoriaMatch && regionMatch;
+      return Object.entries(activeFilters).every(([key, value]) => {
+        if (!value) return true;
+        return item[key as keyof Transaction] === value;
+      });
     });
   }, [originalData, activeFilters]);
 
-  const kpis = useMemo(() => calculateKPIs(filteredData), [filteredData]);
-  const dataByCategoria = useMemo(() => aggregateData(filteredData, 'categoria', 'ingresos'), [filteredData]);
-  const dataByRegion = useMemo(() => aggregateData(filteredData, 'region', 'ingresos'), [filteredData]);
+  const dynamicDataSources = useMemo(() => {
+    const sources: { [key: string]: any } = {};
+    sources.kpis = calculateKPIs(filteredData);
+    sources.transactions = filteredData;
+    
+    currentPageConfig?.visuals.forEach(visual => {
+        if (visual.type.includes('chart')) {
+            const groupBy = visual.filter_key as keyof Transaction;
+            sources[visual.id] = aggregateData(filteredData, groupBy, 'ingresos');
+        }
+    });
+    return sources;
+  }, [filteredData, currentPageConfig]);
 
-  const handleFilterChange = (filterType: keyof ActiveFilters, value: string | null) => {
-    setActiveFilters(prev => ({ ...prev, [filterType]: value }));
+  const handleFilterChange = (filterType: string, value: string) => {
+    setActiveFilters(prev => ({
+        ...prev,
+        [filterType]: value === ALL_ITEMS_VALUE ? null : value
+    }));
   };
 
-  const handleChartClick = (filterType: keyof ActiveFilters, value: string) => {
-    const visualId = filterType === 'categoria' ? 'pie-chart' : 'bar-chart';
-    if(excludedVisuals.has(visualId)) return;
-
-    // If clicking the same value again, reset the filter
+  const handleChartClick = (filterType: string, value: string) => {
     const newFilterValue = activeFilters[filterType] === value ? null : value;
-    handleFilterChange(filterType, newFilterValue);
+    setActiveFilters(prev => ({ ...prev, [filterType]: newFilterValue }));
   };
-  
+
   const resetFilters = () => {
-    setActiveFilters({ categoria: null, region: null });
-  };
-
-  const handleGenerateSummary = async () => {
-    setIsSummaryLoading(true);
-    const result = await generateDashboardSummaryAction(dashboard, filteredData, page);
-    setIsSummaryLoading(false);
-
-    if (result.success) {
-      setSummary(result.summary);
-      setIsDialogOpen(true);
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: result.error,
-      });
-    }
+    setActiveFilters({});
   };
   
-  const uniqueCategories = useMemo(() => [...new Set(originalData.map(item => item.categoria))], [originalData]);
-  const uniqueRegions = useMemo(() => [...new Set(originalData.map(item => item.region))], [originalData]);
-  const tableFilterOptions = useMemo(() => [
-    ...uniqueCategories.map(c => ({ value: c, label: c, group: 'Categoría' })),
-    ...uniqueRegions.map(r => ({ value: r, label: r, group: 'Región' })),
-  ], [uniqueCategories, uniqueRegions]);
-
-  const handleTableFilterChange = (value: string, group?: string) => {
-    if (group === 'Categoría') {
-        handleFilterChange('categoria', value);
-    } else if (group === 'Región') {
-        handleFilterChange('region', value);
-    }
-  };
-  const getActiveTableFilter = () => {
-    if(activeFilters.categoria) return activeFilters.categoria;
-    if(activeFilters.region) return activeFilters.region;
-    return null;
+  if (!currentPageConfig) {
+      return <div className="text-center text-destructive">Error: No se encontró la configuración para esta página del dashboard.</div>;
   }
 
+  const hasActiveFilters = Object.values(activeFilters).some(value => value !== null);
+
   return (
-    <div className="space-y-8">
+    <div className="w-full space-y-8">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
         <div>
           <h1 className="text-4xl font-bold font-headline">{dashboard.name}</h1>
           <p className="text-muted-foreground">{page.name}</p>
         </div>
         <div className="flex items-center gap-2">
+            {/* --- 3. BOTÓN DE FILTROS AHORA ABRE EL SHEET --- */}
             <Sheet>
                 <SheetTrigger asChild>
                     <Button variant="outline">
@@ -153,141 +141,129 @@ export default function DashboardClient({ initialData, dashboard, page }: Dashbo
                     </Button>
                 </SheetTrigger>
                 <SheetContent>
-                    <div className="p-4 space-y-6">
-                        <h3 className="text-lg font-semibold">Filtros Globales</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <Label className="mb-2 block">Categoría</Label>
-                                <Select
-                                    value={activeFilters.categoria || ALL_ITEMS_VALUE}
-                                    onValueChange={(value) => handleFilterChange('categoria', value === ALL_ITEMS_VALUE ? null : value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Filtrar por Categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Categorías</SelectItem>
-                                        {uniqueCategories.map(cat => (
-                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                             <div>
-                                <Label className="mb-2 block">Región</Label>
-                                <Select
-                                    value={activeFilters.region || ALL_ITEMS_VALUE}
-                                    onValueChange={(value) => handleFilterChange('region', value === ALL_ITEMS_VALUE ? null : value)}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Filtrar por Región" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value={ALL_ITEMS_VALUE}>Todas las Regiones</SelectItem>
-                                        {uniqueRegions.map(reg => (
-                                            <SelectItem key={reg} value={reg}>{reg}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    <SheetHeader>
+                        <SheetTitle>Filtros del Dashboard</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4 space-y-6">
+                        {/* Filtro por Región */}
+                        <div className="space-y-2">
+                            <Label htmlFor="region-filter">Región</Label>
+                            <Select
+                                value={activeFilters.region || ALL_ITEMS_VALUE}
+                                onValueChange={(value) => handleFilterChange('region', value)}
+                            >
+                                <SelectTrigger id="region-filter">
+                                    <SelectValue placeholder="Seleccionar Región" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_ITEMS_VALUE}>Todas las Regiones</SelectItem>
+                                    {uniqueRegions.map(region => (
+                                        <SelectItem key={region} value={region}>{region}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <Button variant="ghost" onClick={resetFilters} className="w-full">
+                        {/* Filtro por Categoría */}
+                        <div className="space-y-2">
+                            <Label htmlFor="category-filter">Categoría</Label>
+                             <Select
+                                value={activeFilters.categoria || ALL_ITEMS_VALUE}
+                                onValueChange={(value) => handleFilterChange('categoria', value)}
+                            >
+                                <SelectTrigger id="category-filter">
+                                    <SelectValue placeholder="Seleccionar Categoría" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value={ALL_ITEMS_VALUE}>Todas las Categorías</SelectItem>
+                                    {uniqueCategories.map(category => (
+                                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <SheetFooter>
+                        <Button 
+                            variant="ghost"
+                            onClick={resetFilters}
+                            disabled={!hasActiveFilters}
+                        >
                             <X className="mr-2 h-4 w-4" />
                             Limpiar Filtros
                         </Button>
-                    </div>
+                        <SheetClose asChild>
+                            <Button>Hecho</Button>
+                        </SheetClose>
+                    </SheetFooter>
                 </SheetContent>
             </Sheet>
-            <Button onClick={handleGenerateSummary} disabled={isSummaryLoading}>
-            {isSummaryLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-                <Wand2 className="mr-2 h-4 w-4" />
-            )}
-            Generate AI Summary
-            </Button>
         </div>
       </header>
+      
+      <div 
+        className="w-full grid gap-6"
+        style={{
+            gridTemplateColumns: `repeat(${currentPageConfig.grid.columns}, minmax(0, 1fr))`,
+            gridAutoRows: 'min-content'
+        }}
+      >
+        {currentPageConfig.visuals.map(visual => {
+            const Component = componentMap[visual.type as keyof typeof componentMap];
+            if (!Component) return null;
 
+            const gridStyle = {
+                gridColumn: `span ${visual.grid_position.w}`,
+                gridRow: `span ${visual.grid_position.h}`,
+            };
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Total Ingresos" value={`$${kpis.totalIngresos.toLocaleString()}`} />
-        <KPICard title="Total Unidades" value={kpis.totalUnidadesVendidas.toLocaleString()} />
-        <KPICard title="Promedio Venta" value={`$${kpis.promedioVenta.toFixed(2)}`} />
-        <KPICard title="Transacciones" value={kpis.totalTransacciones.toLocaleString()} />
+            let componentProps: any = {};
+            let visualData: any;
+
+            if (visual.type === 'kpi') {
+                if (visual.data_source) {
+                    const [source, key] = visual.data_source.split('.');
+                    const value = dynamicDataSources[source] ? dynamicDataSources[source][key] : undefined;
+                    return (
+                        <div key={visual.id} style={gridStyle}>
+                            <KPICard title={visual.title} value={formatValue(value, visual.format, visual.precision)} />
+                        </div>
+                    );
+                }
+                return null;
+            } else if (visual.type.includes('chart')) {
+                visualData = dynamicDataSources[visual.id] || [];
+                componentProps = {
+                    chartId: visual.id,
+                    data: visualData,
+                    onBarClick: (value: string) => handleChartClick(visual.filter_key!, value),
+                    onSliceClick: (value: string) => handleChartClick(visual.filter_key!, value),
+                };
+            } else if (visual.type === 'data_table') {
+                visualData = dynamicDataSources.transactions || [];
+                componentProps = {
+                    tableId: visual.id,
+                    data: visualData,
+                };
+            }
+            
+            return (
+                 <div key={visual.id} style={gridStyle}>
+                    <VisualCard
+                        title={visual.title}
+                        visualId={visual.id}
+                        isExcluded={false}
+                        onToggleExclude={() => alert(`Excluir ${visual.id}`)}
+                        exportType={visual.type.includes('chart') ? 'image' : 'csv'}
+                        exportData={visualData}
+                        filterOptions={[]}
+                        onFilterChange={()=>{}}
+                    >
+                        <Component {...componentProps} />
+                    </VisualCard>
+                </div>
+            );
+        })}
       </div>
-
-      <div className="grid gap-8 md:grid-cols-2">
-        <VisualCard
-            title="Ingresos por Categoría"
-            visualId="pie-chart"
-            isExcluded={excludedVisuals.has('pie-chart')}
-            onToggleExclude={handleToggleExclude}
-            exportType="image"
-            exportData={dataByCategoria}
-            filterOptions={uniqueCategories.map(c => ({ value: c, label: c }))}
-            onFilterChange={(value) => handleChartClick('categoria', value)}
-            activeFilter={activeFilters.categoria}
-        >
-            <InteractivePieChart 
-                chartId="pie-chart-element"
-                data={dataByCategoria} 
-                onSliceClick={(categoria) => handleChartClick('categoria', categoria)} 
-            />
-        </VisualCard>
-        <VisualCard
-            title="Ingresos por Región"
-            visualId="bar-chart"
-            isExcluded={excludedVisuals.has('bar-chart')}
-            onToggleExclude={handleToggleExclude}
-            exportType="image"
-            exportData={dataByRegion}
-            filterOptions={uniqueRegions.map(r => ({ value: r, label: r }))}
-            onFilterChange={(value) => handleChartClick('region', value)}
-            activeFilter={activeFilters.region}
-        >
-            <InteractiveBarChart
-                chartId="bar-chart-element"
-                data={dataByRegion} 
-                onBarClick={(region) => handleChartClick('region', region)} 
-            />
-        </VisualCard>
-      </div>
-
-      <div>
-        <VisualCard
-            title="Detalle de Transacciones"
-            visualId="data-table"
-            isExcluded={excludedVisuals.has('data-table')}
-            onToggleExclude={handleToggleExclude}
-            exportType="csv"
-            exportData={filteredData}
-            filterOptions={tableFilterOptions}
-            onFilterChange={handleTableFilterChange}
-            activeFilter={getActiveTableFilter()}
-        >
-            <DataTable data={filteredData} tableId="data-table-element" />
-        </VisualCard>
-      </div>
-
-       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5 text-primary" />
-                AI-Powered Summary for {page.name}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="pt-4 text-foreground">
-                {summary}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction>Close</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

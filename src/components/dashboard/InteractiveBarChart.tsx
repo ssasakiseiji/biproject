@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid, Cell } from 'recharts';
@@ -17,6 +16,8 @@ type InteractiveBarChartProps = {
 
 export function InteractiveBarChart({ data, onBarClick, chartId }: InteractiveBarChartProps) {
     const { theme } = useTheme();
+    // --- LÓGICA DE COLOR DINÁMICO ---
+    const tooltipTextColor = theme === 'dark' ? 'hsl(var(--foreground))' : 'hsl(var(--foreground))';
     const tickColor = theme === 'dark' ? '#f5f5f5' : '#333';
     const primaryColor = 'hsl(var(--primary))';
     
@@ -37,8 +38,9 @@ export function InteractiveBarChart({ data, onBarClick, chartId }: InteractiveBa
                             background: 'hsl(var(--background))',
                             border: '1px solid hsl(var(--border))',
                             borderRadius: 'var(--radius)',
-                            color: 'hsl(var(--foreground))'
                         }}
+                         // --- ESTILO DINÁMICO APLICADO ---
+                        itemStyle={{ color: tooltipTextColor }}
                     />
                     <Legend iconSize={10} wrapperStyle={{ color: tickColor }} />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>

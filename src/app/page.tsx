@@ -16,20 +16,19 @@ export default function HomePage() {
         getAccessibleDashboards(user.id)
           .then((dashboards: Dashboard[]) => {
             if (dashboards.length > 0) {
+              // ✅ Lógica corregida: Siempre redirige al primer dashboard de la lista del cliente
               const firstDashboard = dashboards[0];
               if (firstDashboard.pages && firstDashboard.pages.length > 0) {
                  router.replace(`/dashboard/${firstDashboard.id}/${firstDashboard.pages[0].id}`);
               } else {
-                // Fallback if a dashboard has no pages
                 router.replace(`/dashboard/${firstDashboard.id}`);
               }
             } else {
-              // In a real app, show a "No dashboards" message
-              // For now, redirecting to a generic dashboard route
                router.replace('/dashboard/no-access');
             }
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error("Failed to get dashboards, logging out.", error);
             router.replace('/login');
           });
       } else {

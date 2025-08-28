@@ -18,26 +18,3 @@ export function aggregateData(data: Transaction[], groupBy: keyof Transaction, m
 
   return Object.entries(result).map(([name, value]) => ({ name, value }));
 }
-
-export function calculateKPIs(data: Transaction[]): KPIs {
-  if (!data || data.length === 0) {
-    return {
-      totalIngresos: 0,
-      totalUnidadesVendidas: 0,
-      promedioVenta: 0,
-      totalTransacciones: 0,
-    };
-  }
-
-  const totalIngresos = data.reduce((acc, item) => acc + item.ingresos, 0);
-  const totalUnidadesVendidas = data.reduce((acc, item) => acc + item.unidadesVendidas, 0);
-  const totalTransacciones = data.length;
-  const promedioVenta = totalTransacciones > 0 ? totalIngresos / totalTransacciones : 0;
-
-  return {
-    totalIngresos,
-    totalUnidadesVendidas,
-    promedioVenta,
-    totalTransacciones,
-  };
-}

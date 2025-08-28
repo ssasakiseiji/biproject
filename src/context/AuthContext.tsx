@@ -9,7 +9,8 @@ import { ThemeProvider } from './ThemeContext';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string) => Promise<void>;
+  // ✅ Cambiamos la definición para aceptar una contraseña opcional
+  login: (email: string, password?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -34,10 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string) => {
+  // ✅ Actualizamos la función para que reciba y use la contraseña
+  const login = async (email: string, password?: string) => {
     setLoading(true);
     try {
-      const loggedInUser = await authService.login(email);
+      // ✅ Pasamos la contraseña al servicio de autenticación
+      const loggedInUser = await authService.login(email, password);
       setUser(loggedInUser);
       localStorage.setItem('bizzviz_user', JSON.stringify(loggedInUser));
       router.push('/');

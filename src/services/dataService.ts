@@ -1,69 +1,67 @@
 'use server';
 
-import type { Dashboard, User, DashboardPage, Transaction } from '@/lib/types';
+import type { Dashboard, User, Transaction } from '@/lib/types';
 import { mockUsers } from '@/_mock/db';
-import financialsData from '@/_mock/dashboardData/financials.json';
-import salesData from '@/_mock/dashboardData/sales.json';
-import salesDashboardConfig from '@/_mock/dashboardConfigs/sales.json';
 
-const allDashboardData: Record<string, any> = {
-  financials: financialsData,
-  sales: salesData,
-};
+// URL base de la API del backend
+const API_BASE_URL = 'http://localhost:8000/api';
 
+/**
+ * Obtiene la lista de dashboards a los que un usuario tiene acceso.
+ * Ahora llama al backend para obtener esta lista.
+ */
 export async function getAccessibleDashboards(userId: string): Promise<Dashboard[]> {
-  const allAvailableDashboards: Dashboard[] = [];
-  const salesPages: DashboardPage[] = salesDashboardConfig.pages.map(p => ({
-    id: p.pageId,
-    name: p.name,
-  }));
-  
-  allAvailableDashboards.push({
-    id: salesDashboardConfig.dashboardId,
-    name: salesDashboardConfig.name,
-    path: `/dashboard/${salesDashboardConfig.dashboardId}`,
-    pages: salesPages,
-  });
-
   const user = mockUsers.find(u => u.id === userId);
-  if (user?.role === 'admin') {
-    return allAvailableDashboards;
+  if (!user) {
+    console.error(`Usuario no encontrado con id: ${userId}`);
+    return [];
   }
-  
-  return allAvailableDashboards.filter(d => d.id === 'sales');
+
+  // Mapeamos el ID de cliente de nuestro mock a los IDs que espera el backend ('client_a', 'client_b')
+  const clientApiId = user.clientId === 'client-a-123' ? 'client_a' : 'client_b';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/dashboards/${clientApiId}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching dashboards: ${response.statusText}`);
+    }
+    const dashboards: Dashboard[] = await response.json();
+    return dashboards;
+  } catch (error) {
+    console.error("Failed to fetch accessible dashboards:", error);
+    return [];
+  }
 }
 
-export async function getDashboardById(dashboardId: string): Promise<Dashboard | undefined> {
-    if (dashboardId === salesDashboardConfig.dashboardId) {
-        const salesPages: DashboardPage[] = salesDashboardConfig.pages.map(p => ({
-            id: p.pageId,
-            name: p.name,
-        }));
-        return {
-            id: salesDashboardConfig.dashboardId,
-            name: salesDashboardConfig.name,
-            path: `/dashboard/${salesDashboardConfig.dashboardId}`,
-            pages: salesPages,
-        };
-    }
-    return undefined;
+/**
+ * Obtiene la configuración completa de un dashboard específico por su ID.
+ * Esto también vendrá del backend.
+ */
+export async function getDashboardConfig(clientId: string, dashboardId: string): Promise<any> {
+    // Este endpoint aún no lo hemos creado, pero lo haremos en el futuro.
+    // Por ahora, simulamos que lo obtenemos de la configuración del cliente.
+    console.log(`Buscando dashboard ${dashboardId} para cliente ${clientId}`);
+    // En una implementación real, este podría ser otro endpoint que devuelva solo la config del dashboard.
+    return null; // De momento no lo necesitamos para la vista principal.
 }
 
-export async function getPageData(dashboardId: string, pageId: string): Promise<Transaction[]> {
-  return new Promise((resolve, reject) => {
-    // Se elimina el setTimeout
-    const dashboardData = allDashboardData[dashboardId];
-    if (dashboardData) {
-      resolve(dashboardData);
-    } else {
-      reject(new Error(`Data for dashboard '${dashboardId}' not found.`));
+/**
+ * Obtiene los datos para una visualización específica.
+ */
+export async function getPageData(clientId: string, endpointId: string): Promise<Transaction[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/data/${clientId}/${endpointId}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching data for endpoint ${endpointId}: ${response.statusText}`);
     }
-  });
+    const data: any[] = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Failed to fetch page data for ${endpointId}:`, error);
+    return [];
+  }
 }
 
 export async function getUsers(): Promise<User[]> {
-    return new Promise((resolve) => {
-        // Se elimina el setTimeout
-        resolve(mockUsers);
-    });
+    return Promise.resolve(mockUsers);
 }

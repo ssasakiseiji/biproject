@@ -1,0 +1,8 @@
+id,fecha,categoria,producto,region,ingresos,unidadesVendidas
+txn-001,2025-07-01,Hardware,Laptop Pro,Norte,1500,1
+txn-002,2025-07-01,Software,OS License,Norte,150,1
+txn-003,2025-07-02,Accesorios,Mouse Inalámbrico,Sur,50,2
+txn-004,2025-07-03,Hardware,Monitor 4K,Este,800,2
+txn-005,2025-07-04,Software,Suite de Diseño,Oeste,300,1
+txn-006,2025-07-05,Hardware,Laptop Pro,Norte,3000,2
+txn-007,2025-07-06,Accesorios,Teclado Mecánico,Sur,120,1

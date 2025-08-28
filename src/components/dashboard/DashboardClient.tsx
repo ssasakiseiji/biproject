@@ -1,46 +1,37 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Dashboard, DashboardPage, Transaction } from '@/lib/types';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import type { Transaction } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
+import { getPageData } from '@/services/dataService';
+import { aggregateData } from '@/utils/dataProcessor';
+import Loading from '@/app/(main)/dashboard/[dashboardId]/[pageId]/loading';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Filter, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { calculateKPIs, aggregateData } from '@/utils/dataProcessor';
+import { ArrowUp } from 'lucide-react';
+
+// Importación de todos los componentes visuales
 import { KPICard } from './KPICard';
 import { InteractiveBarChart } from './InteractiveBarChart';
 import { InteractivePieChart } from './InteractivePieChart';
 import { DataTable } from './DataTable';
 import { VisualCard } from './VisualCard';
-// 1. Importar componentes para el panel de filtros
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from '@/components/ui/sheet';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TextBlock } from './TextBlock';
+import { FilterDropdown } from './FilterDropdown';
+import { FilterSelector } from './FilterSelector';
+import { FilterDateRange } from './FilterDateRange';
 
-import dashboardConfig from '@/_mock/dashboardConfigs/sales.json';
+const API_BASE_URL = 'http://localhost:8000/api';
 
-type DashboardClientProps = {
-  initialData: Transaction[];
-  dashboard: Dashboard;
-  page: DashboardPage;
-};
-
-type ActiveFilters = {
-    [key: string]: string | null;
-};
-
-const componentMap = {
+const componentMap: { [key: string]: React.ComponentType<any> } = {
     kpi: KPICard,
     interactive_bar_chart: InteractiveBarChart,
     interactive_pie_chart: InteractivePieChart,
     data_table: DataTable,
+    text_block: TextBlock,
+    filter_dropdown: FilterDropdown,
+    filter_selector: FilterSelector,
+    filter_date_range: FilterDateRange,
 };
 
 const formatValue = (value: any, format?: string, precision?: number) => {
@@ -51,219 +42,235 @@ const formatValue = (value: any, format?: string, precision?: number) => {
     return value.toLocaleString();
 };
 
-const ALL_ITEMS_VALUE = '__ALL__';
+type DrillDownState = {
+    level: number;
+    path: { key: string; value: string }[];
+};
 
-export default function DashboardClient({ initialData, dashboard, page }: DashboardClientProps) {
-  const [originalData] = useState<Transaction[]>(initialData);
-  const { toast } = useToast();
-  const [activeFilters, setActiveFilters] = useState<ActiveFilters>({});
+export default function DashboardClient({ dashboardId, pageId }: { dashboardId: string, pageId: string }) {
+    const { user } = useAuth();
+    const [pageConfig, setPageConfig] = useState<any>(null);
+    const [baseData, setBaseData] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
+    const [kpiData, setKpiData] = useState<any>({});
+    const [drillDownState, setDrillDownState] = useState<Record<string, DrillDownState>>({});
+    const [chartData, setChartData] = useState<Record<string, any[]>>({});
 
-  // 2. Extraer opciones únicas para los selectores de filtro
-  const uniqueRegions = useMemo(() => [...new Set(originalData.map(item => item.region))], [originalData]);
-  const uniqueCategories = useMemo(() => [...new Set(originalData.map(item => item.categoria))], [originalData]);
+    useEffect(() => {
+        if (user) {
+            const clientApiId = user.clientId === 'client-a-123' ? 'client_a' : 'client_b';
 
-  const currentPageConfig = useMemo(() => {
-    return dashboardConfig.pages.find(p => p.pageId === page.id);
-  }, [page.id]);
+            const fetchConfigAndData = async () => {
+                setLoading(true);
+                setError(null);
+                try {
+                    const configRes = await fetch(`${API_BASE_URL}/dashboards/${clientApiId}/${dashboardId}/${pageId}/config`);
+                    if (!configRes.ok) throw new Error('No se pudo cargar la configuración del dashboard.');
+                    const config = await configRes.json();
+                    setPageConfig(config);
 
-  useMemo(() => {
-    if (currentPageConfig) {
-      const maxColumns = currentPageConfig.grid.columns;
-      currentPageConfig.visuals.forEach(visual => {
-        if (visual.grid_position.x + visual.grid_position.w > maxColumns) {
-          console.error(
-            `Error de configuración: La visualización "${visual.title}" (ID: ${visual.id}) excede el número máximo de columnas (${maxColumns}).`
-          );
-        }
-      });
-    }
-  }, [currentPageConfig]);
-
-  const filteredData = useMemo(() => {
-    return originalData.filter(item => {
-      return Object.entries(activeFilters).every(([key, value]) => {
-        if (!value) return true;
-        return item[key as keyof Transaction] === value;
-      });
-    });
-  }, [originalData, activeFilters]);
-
-  const dynamicDataSources = useMemo(() => {
-    const sources: { [key: string]: any } = {};
-    sources.kpis = calculateKPIs(filteredData);
-    sources.transactions = filteredData;
-    
-    currentPageConfig?.visuals.forEach(visual => {
-        if (visual.type.includes('chart')) {
-            const groupBy = visual.filter_key as keyof Transaction;
-            sources[visual.id] = aggregateData(filteredData, groupBy, 'ingresos');
-        }
-    });
-    return sources;
-  }, [filteredData, currentPageConfig]);
-
-  const handleFilterChange = (filterType: string, value: string) => {
-    setActiveFilters(prev => ({
-        ...prev,
-        [filterType]: value === ALL_ITEMS_VALUE ? null : value
-    }));
-  };
-
-  const handleChartClick = (filterType: string, value: string) => {
-    const newFilterValue = activeFilters[filterType] === value ? null : value;
-    setActiveFilters(prev => ({ ...prev, [filterType]: newFilterValue }));
-  };
-
-  const resetFilters = () => {
-    setActiveFilters({});
-  };
-  
-  if (!currentPageConfig) {
-      return <div className="text-center text-destructive">Error: No se encontró la configuración para esta página del dashboard.</div>;
-  }
-
-  const hasActiveFilters = Object.values(activeFilters).some(value => value !== null);
-
-  return (
-    <div className="w-full space-y-8">
-      <header className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-4xl font-bold font-headline">{dashboard.name}</h1>
-          <p className="text-muted-foreground">{page.name}</p>
-        </div>
-        <div className="flex items-center gap-2">
-            {/* --- 3. BOTÓN DE FILTROS AHORA ABRE EL SHEET --- */}
-            <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filtros
-                    </Button>
-                </SheetTrigger>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Filtros del Dashboard</SheetTitle>
-                    </SheetHeader>
-                    <div className="py-4 space-y-6">
-                        {/* Filtro por Región */}
-                        <div className="space-y-2">
-                            <Label htmlFor="region-filter">Región</Label>
-                            <Select
-                                value={activeFilters.region || ALL_ITEMS_VALUE}
-                                onValueChange={(value) => handleFilterChange('region', value)}
-                            >
-                                <SelectTrigger id="region-filter">
-                                    <SelectValue placeholder="Seleccionar Región" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ALL_ITEMS_VALUE}>Todas las Regiones</SelectItem>
-                                    {uniqueRegions.map(region => (
-                                        <SelectItem key={region} value={region}>{region}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        {/* Filtro por Categoría */}
-                        <div className="space-y-2">
-                            <Label htmlFor="category-filter">Categoría</Label>
-                             <Select
-                                value={activeFilters.categoria || ALL_ITEMS_VALUE}
-                                onValueChange={(value) => handleFilterChange('categoria', value)}
-                            >
-                                <SelectTrigger id="category-filter">
-                                    <SelectValue placeholder="Seleccionar Categoría" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ALL_ITEMS_VALUE}>Todas las Categorías</SelectItem>
-                                    {uniqueCategories.map(category => (
-                                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <SheetFooter>
-                        <Button 
-                            variant="ghost"
-                            onClick={resetFilters}
-                            disabled={!hasActiveFilters}
-                        >
-                            <X className="mr-2 h-4 w-4" />
-                            Limpiar Filtros
-                        </Button>
-                        <SheetClose asChild>
-                            <Button>Hecho</Button>
-                        </SheetClose>
-                    </SheetFooter>
-                </SheetContent>
-            </Sheet>
-        </div>
-      </header>
-      
-      <div 
-        className="w-full grid gap-6"
-        style={{
-            gridTemplateColumns: `repeat(${currentPageConfig.grid.columns}, minmax(0, 1fr))`,
-            gridAutoRows: 'min-content'
-        }}
-      >
-        {currentPageConfig.visuals.map(visual => {
-            const Component = componentMap[visual.type as keyof typeof componentMap];
-            if (!Component) return null;
-
-            const gridStyle = {
-                gridColumn: `span ${visual.grid_position.w}`,
-                gridRow: `span ${visual.grid_position.h}`,
+                    if (config.base_endpoint) {
+                        const data = await getPageData(clientApiId, config.base_endpoint);
+                        setBaseData(data);
+                    } else {
+                        throw new Error("La configuración del dashboard no especifica un 'base_endpoint' de datos.");
+                    }
+                } catch (err) {
+                    console.error("Error al cargar el dashboard:", err);
+                    setError(err instanceof Error ? err.message : "Un error inesperado ocurrió.");
+                } finally {
+                    setLoading(false);
+                }
             };
+            fetchConfigAndData();
+        }
+    }, [user, dashboardId, pageId]);
 
-            let componentProps: any = {};
-            let visualData: any;
+    const handleFilterChange = useCallback((filterKey: string, value: any) => {
+        setActiveFilters(prev => ({ ...prev, [filterKey]: value }));
+    }, []);
 
-            if (visual.type === 'kpi') {
-                if (visual.data_source) {
-                    const [source, key] = visual.data_source.split('.');
-                    const value = dynamicDataSources[source] ? dynamicDataSources[source][key] : undefined;
+    const filteredData = useMemo(() => {
+        return baseData.filter(item => {
+            return Object.entries(activeFilters).every(([key, value]) => {
+                if (value === null || value === undefined) return true;
+                if (key === 'fecha' && typeof value === 'object' && value.from && value.to) {
+                    const itemDate = new Date(item.fecha);
+                    return itemDate >= value.from && itemDate <= value.to;
+                }
+                return item[key as keyof Transaction] === value;
+            });
+        });
+    }, [baseData, activeFilters]);
+
+    useEffect(() => {
+        if (!user || !baseData || baseData.length === 0) {
+            setKpiData({});
+            return;
+        };
+        const clientApiId = user.clientId === 'client-a-123' ? 'client_a' : 'client_b';
+        const dataToSend = Object.values(activeFilters).some(v => v !== null && v !== undefined) ? filteredData : baseData;
+        
+        if (dataToSend.length === 0 && baseData.length > 0) {
+            setKpiData({ totalIngresos: 0, totalUnidadesVendidas: 0, promedioVenta: 0, totalTransacciones: 0 });
+            return;
+        }
+
+        const fetchKpis = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/kpis/${clientApiId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dataToSend),
+                });
+                if (!response.ok) throw new Error('Failed to fetch KPIs');
+                const kpis = await response.json();
+                setKpiData(kpis);
+            } catch (error) {
+                console.error("Error fetching KPIs:", error);
+                setKpiData({});
+            }
+        };
+        fetchKpis();
+    }, [user, filteredData, baseData, activeFilters]);
+
+    // ✅ REFACTORIZADO: Lógica de carga de datos para gráficos
+    useEffect(() => {
+        if (!pageConfig || !user) return;
+        
+        const clientApiId = user.clientId === 'client-a-123' ? 'client_a' : 'client_b';
+
+        const fetchAllChartData = async () => {
+            const chartVisuals = pageConfig.visuals.filter((v: any) => v.type.includes('chart'));
+
+            // Usamos Promise.all para ejecutar todas las peticiones en paralelo
+            const promises = chartVisuals.map((visual: any) => {
+                const drill = drillDownState[visual.id] || { level: 0, path: [] };
+                const groupByLevels = [visual.filter_key, ...(visual.drill_down_levels || [])];
+                const currentGroupBy = groupByLevels.slice(0, drill.level + 1);
+
+                const drilledData = filteredData.filter(item => 
+                    drill.path.every((p: {key: string, value: string}) => item[p.key as keyof Transaction] === p.value)
+                );
+
+                return fetch(`${API_BASE_URL}/data/chart/${clientApiId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        base_data: drilledData,
+                        group_by: currentGroupBy,
+                        metric: 'ingresos'
+                    }),
+                })
+                .then(res => res.json())
+                .then(data => ({ chartId: visual.id, data }))
+                .catch(error => {
+                    console.error(`Error fetching data for chart ${visual.id}:`, error);
+                    return { chartId: visual.id, data: [] }; // Devuelve datos vacíos en caso de error
+                });
+            });
+
+            // Esperamos a que todas las peticiones terminen
+            const results = await Promise.all(promises);
+
+            // Creamos un nuevo objeto con todos los datos y actualizamos el estado una sola vez
+            const newChartData = results.reduce((acc, result) => {
+                acc[result.chartId] = result.data;
+                return acc;
+            }, {} as Record<string, any[]>);
+            
+            setChartData(newChartData);
+        };
+
+        fetchAllChartData();
+    }, [pageConfig, user, filteredData, drillDownState]);
+
+    const handleChartClick = (visual: any, value: string) => {
+        const currentDrill = drillDownState[visual.id] || { level: 0, path: [] };
+        if (visual.drill_down_levels && currentDrill.level < visual.drill_down_levels.length) {
+            const groupByLevels = [visual.filter_key, ...(visual.drill_down_levels || [])];
+            const newDrill = {
+                level: currentDrill.level + 1,
+                path: [...currentDrill.path, { key: groupByLevels[currentDrill.level], value: value }]
+            };
+            setDrillDownState(prev => ({ ...prev, [visual.id]: newDrill }));
+        }
+    };
+
+    const handleDrillUp = (visualId: string) => {
+        const currentDrill = drillDownState[visualId];
+        if (!currentDrill || currentDrill.level === 0) return;
+        const newDrill = {
+            level: currentDrill.level - 1,
+            path: currentDrill.path.slice(0, -1)
+        };
+        setDrillDownState(prev => ({ ...prev, [visualId]: newDrill }));
+    };
+
+    if (loading) return <Loading />;
+    if (error) {
+        return (
+            <Card className="m-auto mt-10 w-full max-w-lg bg-destructive/10 border-destructive">
+              <CardHeader><CardTitle className="text-destructive">Error al Cargar el Dashboard</CardTitle></CardHeader>
+              <CardContent><p>{error}</p><p className="mt-4 text-sm text-muted-foreground">Por favor, intenta refrescar la página o contacta a soporte.</p></CardContent>
+            </Card>
+        );
+    }
+    if (!pageConfig) return null;
+
+    return (
+        <div className="w-full space-y-8">
+            <header><h1 className="text-4xl font-bold font-headline">{pageConfig.name}</h1></header>
+            <div className="w-full grid gap-6" style={{ gridTemplateColumns: `repeat(${pageConfig.grid.columns}, minmax(0, 1fr))` }}>
+                {pageConfig.visuals.map((visual: any) => {
+                    const Component = componentMap[visual.type];
+                    if (!Component) return null;
+                    const gridStyle = { gridColumn: `span ${visual.grid_position.w}`, gridRow: `span ${visual.grid_position.h}` };
+
+                    if (visual.type.startsWith('filter_')) {
+                        return ( <div key={visual.id} style={gridStyle}> <Component title={visual.title} config={visual.config} onFilterChange={handleFilterChange} /> </div> );
+                    }
+                    if (visual.type === 'text_block') {
+                        return ( <div key={visual.id} style={gridStyle}> <Component content={visual.content} /> </div> );
+                    }
+                    if (visual.type === 'kpi') {
+                        const key = visual.data_source.split('.')[1];
+                        const value = kpiData[key];
+                        return ( <div key={visual.id} style={gridStyle}> <KPICard title={visual.title} value={formatValue(value, visual.format, visual.precision)} /> </div> );
+                    }
+
+                    let visualData: any;
+                    const props: any = { title: visual.title };
+
+                    if (visual.type.includes('chart')) {
+                        visualData = chartData[visual.id] || [];
+                        props.data = visualData;
+                        props.onBarClick = (val: string) => handleChartClick(visual, val);
+                        props.onSliceClick = (val: string) => handleChartClick(visual, val);
+                    } else if (visual.type === 'data_table') {
+                        visualData = filteredData;
+                        props.data = visualData;
+                    }
+                    
+                    const drill = drillDownState[visual.id];
+                    const isDrilledDown = drill && drill.level > 0;
+
                     return (
                         <div key={visual.id} style={gridStyle}>
-                            <KPICard title={visual.title} value={formatValue(value, visual.format, visual.precision)} />
+                            <VisualCard title={visual.title} visualId={visual.id} exportType={visual.type.includes('chart') ? 'image' : 'csv'} exportData={visualData}>
+                                {isDrilledDown && (
+                                    <Button variant="ghost" size="sm" className="absolute top-2 right-12 z-10" onClick={() => handleDrillUp(visual.id)}>
+                                        <ArrowUp className="h-4 w-4 mr-1" /> Subir Nivel
+                                    </Button>
+                                )}
+                                <Component {...props} />
+                            </VisualCard>
                         </div>
                     );
-                }
-                return null;
-            } else if (visual.type.includes('chart')) {
-                visualData = dynamicDataSources[visual.id] || [];
-                componentProps = {
-                    chartId: visual.id,
-                    data: visualData,
-                    onBarClick: (value: string) => handleChartClick(visual.filter_key!, value),
-                    onSliceClick: (value: string) => handleChartClick(visual.filter_key!, value),
-                };
-            } else if (visual.type === 'data_table') {
-                visualData = dynamicDataSources.transactions || [];
-                componentProps = {
-                    tableId: visual.id,
-                    data: visualData,
-                };
-            }
-            
-            return (
-                 <div key={visual.id} style={gridStyle}>
-                    <VisualCard
-                        title={visual.title}
-                        visualId={visual.id}
-                        isExcluded={false}
-                        onToggleExclude={() => alert(`Excluir ${visual.id}`)}
-                        exportType={visual.type.includes('chart') ? 'image' : 'csv'}
-                        exportData={visualData}
-                        filterOptions={[]}
-                        onFilterChange={()=>{}}
-                    >
-                        <Component {...componentProps} />
-                    </VisualCard>
-                </div>
-            );
-        })}
-      </div>
-    </div>
-  );
+                })}
+            </div>
+        </div>
+    );
 }

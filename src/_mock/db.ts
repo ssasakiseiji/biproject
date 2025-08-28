@@ -1,24 +1,40 @@
-import type { User, Settings } from '@/lib/types';
+// ssasakiseiji/biproject/biproject-c27025170b497117a48b90ae73651843b5f34964/src/_mock/db.ts
 
-// La lista de usuarios sigue siendo necesaria para la simulación del login.
+import type { User, Settings, Client } from '@/lib/types';
+
+// ✅ Definimos los clientes (empresas)
+export const mockClients: Client[] = [
+  { id: 'client-a-123', name: 'Empresa Alfa' },
+  { id: 'client-b-456', name: 'Compañía Beta' },
+];
+
+// ✅ Actualizamos los usuarios para que pertenezcan a un cliente
 export const mockUsers: User[] = [
+  // Usuarios de la Empresa Alfa
   {
     id: 'admin-01',
-    name: 'Admin User',
-    email: 'admin@bizzviz.com',
+    name: 'A Admin',
+    email: 'admin@acomp.com',
     role: 'admin',
+    clientId: 'client-a-123', 
+     password: '1234'
   },
   {
     id: 'user-01',
-    name: 'Standard User',
-    email: 'user@bizzviz.com',
+    name: 'A User',
+    email: 'user@acomp.com',
     role: 'user',
+    clientId: 'client-a-123',
+     password: '1234'
   },
+  // Usuario de la Compañía Beta
   {
     id: 'user-02',
-    name: 'Editor User',
-    email: 'editor@bizzviz.com',
-    role: 'editor',
+    name: 'B User',
+    email: 'user@bcomp.com',
+    role: 'user',
+    clientId: 'client-b-456',
+     password: '1234'
   }
 ];
 

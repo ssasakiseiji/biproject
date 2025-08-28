@@ -8,13 +8,18 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configuración de CORS para permitir peticiones desde el frontend de Next.js
+# ✅ Actualizamos la configuración de CORS para ser más permisiva en desarrollo
+origins = [
+    "http://localhost:3000",
+    "http://localhost:9002",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000","http://localhost:9002"], # Origen de tu app Next.js
+    allow_origins=origins, 
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], # Permite todos los métodos
+    allow_headers=["*"], # Permite todas las cabeceras
 )
 
 app.include_router(endpoints.router, prefix="/api")

@@ -1,8 +1,17 @@
+// ssasakiseiji/biproject/biproject-c27025170b497117a48b90ae73651843b5f34964/src/lib/types.ts
+
+export interface Client {
+  id: string;
+  name: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   role: 'admin' | 'user' | 'editor';
+  clientId: string; // ✅ Añadimos la relación con un cliente
+  password?: string;
 }
 
 export interface DashboardPage {
@@ -12,6 +21,7 @@ export interface DashboardPage {
 
 export interface Dashboard {
   id: string;
+  clientId: string; // ✅ Añadimos la relación con un cliente
   name: string;
   path: string;
   pages?: DashboardPage[];

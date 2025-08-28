@@ -9,7 +9,7 @@ import { getAIResponse } from '@/services/aiAnalystService';
 import Message from './Message';
 import TypingIndicator from './TypingIndicator';
 import type { DashboardData } from '@/lib/types';
-import salesData from '@/_mock/dashboardData/sales.json';
+import { getPageData } from '@/services/dataService'; // Importamos getPageData
 
 export interface ChatMessage {
     text: string;
@@ -21,7 +21,16 @@ export default function AIAnalystChat() {
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const [dashboardContext] = useState<DashboardData>(salesData);
+    const [dashboardContext, setDashboardContext] = useState<DashboardData | null>(null);
+
+    // Efecto para cargar los datos del dashboard cuando el componente se monta
+    useEffect(() => {
+        // Obtenemos los datos del dashboard de ventas para el chat
+        getPageData('sales', 'overview').then(data => {
+            setDashboardContext(data);
+        });
+    }, []);
+
 
     const scrollToBottom = () => {
         if (scrollAreaRef.current) {
@@ -41,7 +50,7 @@ export default function AIAnalystChat() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inputValue.trim()) return;
+        if (!inputValue.trim() || !dashboardContext) return;
 
         const userMessage: ChatMessage = { text: inputValue, sender: 'user' };
         setMessages(prev => [...prev, userMessage]);
@@ -78,9 +87,9 @@ export default function AIAnalystChat() {
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         className="flex-1"
-                        disabled={isTyping}
+                        disabled={isTyping || !dashboardContext}
                     />
-                    <Button type="submit" disabled={isTyping || !inputValue.trim()}>
+                    <Button type="submit" disabled={isTyping || !inputValue.trim() || !dashboardContext}>
                         <Send className="h-4 w-4" />
                         <span className="sr-only">Send</span>
                     </Button>

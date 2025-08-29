@@ -8,18 +8,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ✅ Actualizamos la configuración de CORS para ser más permisiva en desarrollo
-origins = [
-    "http://localhost:3000",
-    "http://localhost:9002",
-]
+# Para desarrollo, permitir todos los orígenes es la opción más sencilla.
+# En producción, deberías cambiar "*" por la URL de tu frontend.
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, 
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Permite todos los métodos
-    allow_headers=["*"], # Permite todas las cabeceras
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(endpoints.router, prefix="/api")

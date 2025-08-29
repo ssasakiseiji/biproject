@@ -45,9 +45,11 @@ export function SearchableDropdown({ options, onSelect, placeholder = "Select an
           aria-expanded={open}
           className="w-full justify-between"
         >
-          {selectedValue
-            ? selectedLabel
-            : placeholder}
+          <span className="truncate">
+            {selectedValue
+              ? selectedLabel
+              : placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

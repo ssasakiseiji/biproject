@@ -1,31 +1,35 @@
 import importlib
 import pandas as pd
 
-def get_data_for_endpoint(client_id: str, endpoint_id: str):
+def get_data_for_endpoint(client_id: str, endpoint_id: str, filters: dict = None):
     """
-    Orquesta la obtención y procesamiento de datos para un endpoint específico de un cliente.
+    Orquesta la obtención y procesamiento de datos para un endpoint, aplicando filtros.
     """
     try:
         config_module = importlib.import_module(f"configs.{client_id}_config")
-        config = config_module.CONFIG
-        
+        config = config_module.get_config()
+
         endpoint_config = config["endpoints"][endpoint_id]
         source_config = config["data_sources"][endpoint_config["source"]]
-        
-        # Cargar los datos usando el loader especificado
+
         loader_func = source_config["loader"]
-        # Pasamos la ruta del archivo en lugar de credenciales y query
         df = loader_func(file_path=source_config["path"])
 
-        # El pipeline de procesamiento funciona exactamente igual que antes
+        # Aquí se podrían aplicar los filtros si fuera necesario antes del pipeline
+
         for step in endpoint_config.get("pipeline", []):
             if isinstance(step, tuple):
-                processor_func, args = step
+                processor_func_path, args = step
+                module_path, func_name = processor_func_path.rsplit('.', 1)
+                module = importlib.import_module(module_path)
+                processor_func = getattr(module, func_name)
                 df = processor_func(df, **args)
             else:
-                processor_func = step
+                module_path, func_name = step.rsplit('.', 1)
+                module = importlib.import_module(module_path)
+                processor_func = getattr(module, func_name)
                 df = processor_func(df)
-        
+
         return df.to_dict(orient='records')
 
     except ModuleNotFoundError:

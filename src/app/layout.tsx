@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { ThemeContext } from '@/context/ThemeContext';
 
 export const metadata: Metadata = {
-  title: 'BizzViz - Your Business Intelligence Partner',
+  title: 'KIN BI - Your Business Intelligence Partner',
   description: 'BI as a Service Platform',
 };
 

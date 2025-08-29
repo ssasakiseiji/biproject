@@ -23,13 +23,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
-      const storedUser = localStorage.getItem('bizzviz_user');
+      const storedUser = localStorage.getItem('kinbi_user');
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
       console.error('Failed to parse user from localStorage', error);
-      localStorage.removeItem('bizzviz_user');
+      localStorage.removeItem('kinbi_user');
     } finally {
       setLoading(false);
     }
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ✅ Pasamos la contraseña al servicio de autenticación
       const loggedInUser = await authService.login(email, password);
       setUser(loggedInUser);
-      localStorage.setItem('bizzviz_user', JSON.stringify(loggedInUser));
+      localStorage.setItem('kinbi_user', JSON.stringify(loggedInUser));
       router.push('/');
     } catch (error) {
       console.error('Login failed:', error);
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     authService.logout().then(() => {
       setUser(null);
-      localStorage.removeItem('bizzviz_user');
+      localStorage.removeItem('kinbi_user');
       router.push('/login');
       setLoading(false);
     });

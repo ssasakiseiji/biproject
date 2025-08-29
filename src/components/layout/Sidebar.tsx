@@ -57,9 +57,11 @@ export function Sidebar() {
     const dashboard = dashboards.find(d => d.id === dashboardId);
     if (dashboard) {
         setSelectedDashboard(dashboard);
-        const firstPageId = dashboard.pages?.[0]?.id;
-        if (firstPageId) {
-            router.push(`/dashboard/${dashboard.id}/${firstPageId}`);
+        const firstPage = dashboard.pages?.find(p => p.id);
+        if (firstPage) {
+            router.push(`/dashboard/${dashboard.id}/${firstPage.id}`);
+        } else {
+            router.push(`/dashboard/${dashboard.id}/no-pages`);
         }
         setOpenMobile(false);
     }
@@ -77,7 +79,7 @@ export function Sidebar() {
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2">
             <BarChart3 className="h-8 w-8 text-primary" />
-            <h1 className="text-xl font-bold font-headline">BizzViz</h1>
+            <h1 className="text-xl font-bold font-headline">KIN BI</h1>
         </Link>
       </SidebarHeader>
 
@@ -103,6 +105,7 @@ export function Sidebar() {
             <h3 className="mb-2 px-2 text-xs font-semibold uppercase text-muted-foreground">Páginas</h3>
             <SidebarMenu>
               {selectedDashboardPages.map((page) => (
+                page.id ? (
                 <SidebarMenuItem key={page.id}>
                     <Button 
                         asChild 
@@ -115,6 +118,7 @@ export function Sidebar() {
                         </Link>
                     </Button>
                 </SidebarMenuItem>
+                ) : null
               ))}
             </SidebarMenu>
            </div>

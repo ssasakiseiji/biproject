@@ -29,7 +29,7 @@ export function getAIResponse(message: string, dashboardContext: DashboardData):
         } else if (lowerCaseMessage.includes('compare') || lowerCaseMessage.includes('comparison')) {
             resolve("I can provide comparisons, but can you be more specific? For example, 'compare sales between Norte and Sur regions'.");
         } else if (lowerCaseMessage.includes('hello') || lowerCaseMessage.includes('hi')) {
-            resolve("Hello! I'm your BizzViz AI Analyst. How can I help you with your sales data today?");
+            resolve("Hello! I'm your KIN BI AI Analyst. How can I help you with your sales data today?");
         }
         else {
             resolve("I'm not sure I understand the question. Can you please rephrase it? You can ask me about total sales, the best region, or a comparison between regions.");

@@ -1,0 +1,25 @@
+# Dependencias
+
+node_modules/
+venv/
+vendor/
+.next/
+
+# Archivos de compilación y distribución
+
+dist/
+build/
+.next/
+
+# Logs
+
+\*.log
+
+# Configuraciones locales y secretos
+
+.env
+\*.local
+
+# Git
+
+.git/

@@ -50,7 +50,7 @@ export default function LoginPage() {
           <div className="flex justify-center items-center mb-4">
             <BarChart3 className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-headline">BizzViz</CardTitle>
+          <CardTitle className="text-3xl font-headline">KIN BI</CardTitle>
           <CardDescription>Your Business Intelligence Partner</CardDescription>
         </CardHeader>
         <CardContent>
@@ -63,7 +63,7 @@ export default function LoginPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin@bizzviz.com" {...field} />
+                      <Input placeholder="admin@kinbi.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

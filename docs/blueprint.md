@@ -1,4 +1,4 @@
-# **App Name**: BIzzViz
+# **App Name**: KIN BI
 
 ## Core Features:
 

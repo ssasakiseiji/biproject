@@ -1,5 +1,3 @@
-// ssasakiseiji/biproject/biproject-c27025170b497117a48b90ae73651843b5f34964/src/lib/types.ts
-
 export interface Client {
   id: string;
   name: string;
@@ -10,7 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user' | 'editor';
-  clientId: string; // ✅ Añadimos la relación con un cliente
+  clientId: string;
   password?: string;
 }
 
@@ -21,23 +19,41 @@ export interface DashboardPage {
 
 export interface Dashboard {
   id: string;
-  clientId: string; // ✅ Añadimos la relación con un cliente
+  clientId: string;
   name: string;
   path: string;
   pages?: DashboardPage[];
 }
 
-export interface Permission {
-  userId: string;
-  dashboardAccess: Array<{
-    dashboardId: string;
-    pageIds: string[];
-  }>;
+export interface VisualItem {
+  id: string;
+  type: string;
+  title: string;
+  grid_position: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+  };
+  content?: string;
+  data_source?: string;
+  format?: string;
+  precision?: number;
+  api_endpoint?: string;
+  filter_key?: string;
+  drill_down_levels?: string[];
+  config?: any;
 }
 
-export interface Settings {
-  userId: string;
-  theme: 'light' | 'dark';
+export interface PageConfig {
+  pageId: string;
+  name: string;
+  base_endpoint: string;
+  layout: {
+    columns: number;
+    rows: number;
+  };
+  visuals: VisualItem[];
 }
 
 export interface BarChartData {
@@ -52,7 +68,6 @@ export interface PieChartData {
 }
 
 export type DashboardData = Record<string, any>;
-
 
 export interface Transaction {
   id: string;
